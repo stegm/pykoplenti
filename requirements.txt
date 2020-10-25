@@ -1,0 +1,3 @@
+aiohttp
+pycryptodome
+prompt_toolkit
