@@ -6,7 +6,7 @@ from Crypto.Cipher import AES
 import hmac
 import hashlib
 from os import urandom
-from typing import Iterable
+from typing import Iterable, Dict
 from json import dumps
 import logging
 
@@ -92,6 +92,45 @@ class ProcessData:
     def __repr__(self):
         return dumps(self._raw)
 
+class SettingsData:
+    """Represents a single settings data."""
+    def __init__(self, raw):
+        self._raw = raw
+
+    @property
+    def unit(self) -> str:
+        return self._raw['unit']
+
+    @property
+    def default(self) -> str:
+        return self._raw['default']
+
+    @property
+    def id(self) -> str:
+        return self._raw['id']
+
+    @property
+    def max(self) -> str:
+        return self._raw['max']
+
+    @property
+    def min(self) -> str:
+        return self._raw['min']
+
+    @property
+    def type(self) -> str:
+        return self._raw['type']
+
+    @property
+    def access(self) -> str:
+        return self._raw['access']
+
+    def __str__(self):
+        return f'SettingsData(id={self.id}, unit={self.unit}, default={self.default}, min={self.min}, max={self.max},' \
+               f'type={self.type}, access={self.access})'
+
+    def __repr__(self):
+        return dumps(self._raw)
 
 class PlenticoreClient:
     """Client for REST-API of plenticore inverters."""
@@ -181,11 +220,11 @@ class PlenticoreClient:
             session_response = await resp.json()
             self.session_id = session_response['sessionId']
 
-    def _session_request(self, path: str, method='GET'):
+    def _session_request(self, path: str, method='GET', **kwargs):
         """Make an request on the current active session."""
         # TODO exception if session does not exist
         headers = { 'authorization': f'Session {self.session_id}'}
-        return self.websession.request(method, self._create_url(path), headers=headers)
+        return self.websession.request(method, self._create_url(path), headers=headers, **kwargs)
 
     async def get_me(self) -> MeData:
         """Returns information about the user."""
@@ -205,3 +244,14 @@ class PlenticoreClient:
             data_response = await resp.json()
             return list([ProcessData(x) for x in data_response[0]['processdata']])
 
+    async def get_settings(self) -> Dict[str, SettingsData]:
+        """Returns list of all modules with a list of available settings identifiers."""
+        async with self._session_request('settings') as resp:
+            response = await resp.json()
+            result = {}
+            for module in response:
+                id = module['moduleid']
+                data = list([SettingsData(x) for x in module['settings']])
+                result[id] = data
+
+            return result

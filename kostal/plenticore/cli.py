@@ -23,8 +23,11 @@ class SessionCache:
 
     def write_session_id(self, id: str):
         file = os.path.join(tempfile.gettempdir(), f'plenticore-session-{self.host}')
-        with os.open(file, os.O_WRONLY or os.O_TRUNC, mode=0o600) as f:
-            f.write(id)
+        f = os.open(file, os.O_WRONLY | os.O_TRUNC | os.O_CREAT, mode=0o600)
+        try:
+            os.write(f, id.encode('ascii'))
+        finally:
+            os.close(f)
 
 
 
@@ -109,6 +112,12 @@ class PlenticoreShell:
         for module_id in args:
             process_data = await self.client.get_process_data(module_id=module_id)
             print_formatted_text(*process_data, sep='\n')
+
+    async def do_settings(self, *args):
+        settings_data = await self.client.get_settings()
+        for id, data in settings_data.items():
+            print_formatted_text(f'Module: {id}')
+            print_formatted_text(*data, sep='\n')
 
 
 
