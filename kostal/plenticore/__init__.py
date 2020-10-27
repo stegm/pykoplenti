@@ -6,7 +6,7 @@ from Crypto.Cipher import AES
 import hmac
 import hashlib
 from os import urandom
-from typing import Iterable, Dict
+from typing import Iterable, Dict, Union
 from json import dumps
 import logging
 
@@ -132,10 +132,31 @@ class SettingsData:
     def __repr__(self):
         return dumps(self._raw)
 
+class ClientRequestError(Exception):
+    """Exception raised for client API errors.
+
+    Attributes:
+        status -- status code of server response
+        error -- error message of status code
+        message -- optional message of response
+    """
+
+    def __init__(self, status, error, message):
+        self.status = status
+        self.error = error
+        self.message = message
+
+
+
 class PlenticoreClient:
     """Client for REST-API of plenticore inverters."""
 
     BASE_URL = '/api/v1/'
+
+    ERRORS = {
+        404: 'Module or setting not found',
+        503: 'Internal communication error',
+    }
 
     def __init__(self, websession: ClientSession, host: str, port: int = 80):
         self.websession = websession
@@ -220,33 +241,55 @@ class PlenticoreClient:
             session_response = await resp.json()
             self.session_id = session_response['sessionId']
 
-    def _session_request(self, path: str, method='GET', **kwargs):
+    def _session_request(self, path: str, method='GET', **kwargs) -> ClientResponse:
         """Make an request on the current active session."""
         # TODO exception if session does not exist
         headers = { 'authorization': f'Session {self.session_id}'}
         return self.websession.request(method, self._create_url(path), headers=headers, **kwargs)
 
+    async def _check_response(self, resp: ClientResponse):
+        """Check if the given response contains an error."""
+
+        if resp.status != 200:
+            if resp.status in PlenticoreClient.ERRORS:
+                error = PlenticoreClient.ERRORS[resp.status]
+            else:
+                error = None
+
+            try:
+                response = await resp.json()
+                message = response['message']
+            except:
+                message = None
+
+            raise ClientRequestError(resp.status, error, message)
+
+
     async def get_me(self) -> MeData:
         """Returns information about the user."""
         async with self._session_request('auth/me') as resp:
+            await self._check_response(resp)
             me_response = await resp.json()
             return MeData(me_response)
 
     async def get_modules(self) -> Iterable[ModuleData]:
         """Returns list of all available modules (providing process data or settings)."""
         async with self._session_request('modules') as resp:
+            await self._check_response(resp)
             modules_response = await resp.json()
             return list([ModuleData(x) for x in modules_response])
 
     async def get_process_data(self, module_id: str) -> Iterable[ProcessData]:
         """Returns list of all available process-data identifiers of a module."""
         async with self._session_request(f'processdata/{module_id}') as resp:
+            await self._check_response(resp)
             data_response = await resp.json()
             return list([ProcessData(x) for x in data_response[0]['processdata']])
 
     async def get_settings(self) -> Dict[str, SettingsData]:
         """Returns list of all modules with a list of available settings identifiers."""
         async with self._session_request('settings') as resp:
+            await self._check_response(resp)
             response = await resp.json()
             result = {}
             for module in response:
@@ -255,3 +298,33 @@ class PlenticoreClient:
                 result[id] = data
 
             return result
+
+    async def get_setting_values(self, module_id: str,
+                                 setting_ids: Union[str, Iterable[str]] = None) -> Dict[str, str]:
+        if isinstance(setting_ids, str):
+            async with self._session_request(f'settings/{module_id}/{setting_ids}') as resp:
+                await self._check_response(resp)
+                response = await resp.json()
+                return dict([(response[0]['id'], response[0]['value'])])
+        elif setting_ids is None or len(setting_ids) == 0:
+            async with self._session_request(f'settings/{module_id}') as resp:
+                await self._check_response(resp)
+                response = await resp.json()
+                return dict([(x['id'], x['value']) for x in response])
+        elif isinstance(setting_ids, Iterable):
+            ids = ",".join(setting_ids)
+            async with self._session_request(f'settings/{module_id}/{ids}') as resp:
+                await self._check_response(resp)
+                response = await resp.json()
+                return dict([(x['id'], x['value']) for x in response])
+        else:
+            raise TypeError()
+
+    async def set_setting_values(self, module_id: str, values: Dict[str, str]):
+        request = [{
+            'moduleid': module_id,
+            'settings': list([dict(value=v, id=k) for k, v in values.items()])
+        }]
+        async with self._session_request(f'settings', method='PUT', json=request) as resp:
+            await self._check_response(resp)
+
