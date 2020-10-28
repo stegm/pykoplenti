@@ -148,7 +148,7 @@ class ClientRequestError(Exception):
 
 
 
-class PlenticoreClient:
+class PlenticoreApiClient:
     """Client for REST-API of plenticore inverters."""
 
     BASE_URL = '/api/v1/'
@@ -166,7 +166,7 @@ class PlenticoreClient:
 
     def _create_url(self, path: str) -> URL:
         """Creates a REST-API URL with the given path as suffix."""
-        base = URL.build(scheme='http', host=self.host, port=self.port, path=PlenticoreClient.BASE_URL)
+        base = URL.build(scheme='http', host=self.host, port=self.port, path=PlenticoreApiClient.BASE_URL)
         return base.join(URL(path))
 
     async def login(self, password: str, user: str = 'user'):
@@ -251,8 +251,8 @@ class PlenticoreClient:
         """Check if the given response contains an error."""
 
         if resp.status != 200:
-            if resp.status in PlenticoreClient.ERRORS:
-                error = PlenticoreClient.ERRORS[resp.status]
+            if resp.status in PlenticoreApiClient.ERRORS:
+                error = PlenticoreApiClient.ERRORS[resp.status]
             else:
                 error = None
 
@@ -301,6 +301,7 @@ class PlenticoreClient:
 
     async def get_setting_values(self, module_id: str,
                                  setting_ids: Union[str, Iterable[str]] = None) -> Dict[str, str]:
+        """Returns specified or all settings of a module."""
         if isinstance(setting_ids, str):
             async with self._session_request(f'settings/{module_id}/{setting_ids}') as resp:
                 await self._check_response(resp)
@@ -321,10 +322,14 @@ class PlenticoreClient:
             raise TypeError()
 
     async def set_setting_values(self, module_id: str, values: Dict[str, str]):
+        """Writes a list of settings for one modules."""
         request = [{
             'moduleid': module_id,
             'settings': list([dict(value=v, id=k) for k, v in values.items()])
         }]
         async with self._session_request(f'settings', method='PUT', json=request) as resp:
             await self._check_response(resp)
+
+
+
 

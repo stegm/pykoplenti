@@ -1,4 +1,4 @@
-from kostal.plenticore import PlenticoreClient
+from kostal.plenticore import PlenticoreApiClient
 import asyncio
 from aiohttp import ClientSession
 from prompt_toolkit import PromptSession, print_formatted_text
@@ -8,6 +8,7 @@ from ast import literal_eval
 from inspect import iscoroutinefunction
 import traceback
 import click
+from typing import Callable
 
 class SessionCache:
     """Persistent the session in a temporary file."""
@@ -34,7 +35,7 @@ class SessionCache:
 
 class PlenticoreShell:
     """Provides a shell-like access to the plenticore client."""
-    def __init__(self, client: PlenticoreClient):
+    def __init__(self, client: PlenticoreApiClient):
         super().__init__()
         self.client = client
         self._session_cache = SessionCache(self.client.host)
@@ -143,14 +144,31 @@ class PlenticoreShell:
 
 async def repl_main(host, port, passwd):
     async with ClientSession() as session:
-        client = PlenticoreClient(session, host=host, port=port)
+        client = PlenticoreApiClient(session, host=host, port=port)
 
         shell = PlenticoreShell(client)
         await shell.run(passwd)
 
+async def comman_main(host: str, port: int, passwd: str, fn: Callable[[PlenticoreApiClient], None]):
+    async with ClientSession() as session:
+        client = PlenticoreApiClient(session, host=host, port=port)
+        session_cache = SessionCache(host)
+
+        # Try to reuse an existing session
+        client.session_id = session_cache.read_session_id()
+        me = await client.get_me()
+        if not me.is_authenticated:
+            # create a new session
+            await client.login(passwd)
+            session_cache.write_session_id(client.session_id)
+
+        await fn(client)
+
+
 
 
 class GlobalArgs:
+    """Global arguments over all sub commands."""
     pass
 
 pass_global_args = click.make_pass_decorator(GlobalArgs, ensure=True)
@@ -183,6 +201,87 @@ def cli(global_args, host, port, password, password_file):
 def repl(global_args):
     """Provides a simple REPL for executing API requests to plenticore inverters."""
     asyncio.run(repl_main(global_args.host, global_args.port, global_args.passwd))
+
+@cli.command()
+@pass_global_args
+def all_settings(global_args):
+    """Returns the ids of all settings."""
+    async def fn(client: PlenticoreApiClient):
+        settings = await client.get_settings()
+        for k, v in settings.items():
+            for x in v:
+                print(f'{k}/{x.id}')
+
+    asyncio.run(comman_main(global_args.host, global_args.port, global_args.passwd, fn))
+
+
+@cli.command()
+@click.argument('ids', required=True, nargs=-1)
+@pass_global_args
+def read_settings(global_args, ids):
+    """Read the value of the given settings.
+
+    IDS is the identifier (<module_id>/<setting_id>) of one or more settings to read
+
+    \b
+    Examples:
+        read-settings devices:local/Battery:MinSoc
+        read-settings devices:local/Battery:MinSoc devices:local/Battery:MinHomeComsumption
+    """
+    async def fn(client: PlenticoreApiClient):
+        settings = await client.get_settings()
+
+        query = {}
+        for id in ids:
+            module, setting = id.split(sep='/', maxsplit=-1)
+            if module in query:
+                query[module].append(setting)
+            else:
+                query[module] = [setting]
+
+        result = {}
+        for module, settings in query.items():
+            values = await client.get_setting_values(module, settings)
+            for id, val in values.items():
+                result[f'{module}/{id}'] = val
+
+        for k, v in result.items():
+            print(f'{k}={v}')
+
+    asyncio.run(comman_main(global_args.host, global_args.port, global_args.passwd, fn))
+
+
+
+@cli.command()
+@click.argument('id_values', required=True, nargs=-1)
+@pass_global_args
+def write_settings(global_args, id_values):
+    """Write the values of the given settings.
+
+    ID_VALUES is the identifier plus the the value to write
+
+    \b
+    Examples:
+        write-settings devices:local/Battery:MinSoc=15
+        """
+    async def fn(client: PlenticoreApiClient):
+        settings = await client.get_settings()
+
+        query = {}
+        for id_value in id_values:
+            id, value = id_value.split(sep='=', maxsplit=2)
+            module, setting = id.split(sep='/', maxsplit=2)
+
+            if module in query:
+                query[module][setting] = value
+            else:
+                query[module] = {setting: value}
+
+        result = {}
+        for module, setting_values in query.items():
+            await client.set_setting_values(module, setting_values)
+
+    asyncio.run(comman_main(global_args.host, global_args.port, global_args.passwd, fn))
 
 
 # entry point for pycharm; should not be used for commandline usage
