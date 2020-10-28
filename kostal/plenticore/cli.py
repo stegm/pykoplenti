@@ -1,13 +1,13 @@
 from kostal.plenticore import PlenticoreClient
 import asyncio
 from aiohttp import ClientSession
-import argparse
 from prompt_toolkit import PromptSession, print_formatted_text
 import os
 import tempfile
 from ast import literal_eval
 from inspect import iscoroutinefunction
 import traceback
+import click
 
 class SessionCache:
     """Persistent the session in a temporary file."""
@@ -141,7 +141,7 @@ class PlenticoreShell:
 
 
 
-async def main(host, port, passwd):
+async def repl_main(host, port, passwd):
     async with ClientSession() as session:
         client = PlenticoreClient(session, host=host, port=port)
 
@@ -149,26 +149,43 @@ async def main(host, port, passwd):
         await shell.run(passwd)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Plenticore command line client.')
-    parser.add_argument('--host', type=str, required=True,
-                        help='hostname or ip of plenticore inverter')
-    parser.add_argument('--port', type=int, default=80,
-                        help='port of plenticore (default 80)')
-    parser.add_argument('--password', type=str, default=None,
-                        help='password')
-    parser.add_argument('--password-file', type=str, default='secrets',
-                        help='password file (default "secrets" in the current working directory)')
 
-    args = parser.parse_args()
+class GlobalArgs:
+    pass
 
-    if args.password is not None:
-        passwd = args.password
-    elif os.path.isfile(args.password_file):
-        with open(args.password_file, 'rt') as f:
-            passwd = f.readline()
+pass_global_args = click.make_pass_decorator(GlobalArgs, ensure=True)
+
+
+@click.group()
+@click.option('--host',
+              help='hostname or ip of plenticore inverter')
+@click.option('--port', default=80,
+              help='port of plenticore (default 80)')
+@click.option('--password', default=None,
+              help='the password')
+@click.option('--password-file', default='secrets',
+              help='password file (default "secrets" in the current working directory)')
+@pass_global_args
+def cli(global_args, host, port, password, password_file):
+    if password is not None:
+        global_args.passwd = password
+    elif os.path.isfile(password_file):
+        with open(password_file, 'rt') as f:
+            global_args.passwd = f.readline()
     else:
-        passwd = None
+        global_args.passwd = None
+
+    global_args.host = host
+    global_args.port = port
+
+@cli.command()
+@pass_global_args
+def repl(global_args):
+    """Provides a simple REPL for executing API requests to plenticore inverters."""
+    asyncio.run(repl_main(global_args.host, global_args.port, global_args.passwd))
 
 
-    asyncio.run(main(args.host, args.port, passwd))
+# entry point for pycharm; should not be used for commandline usage
+if __name__ == '__main__':
+    import sys
+    cli(sys.argv[1:])
