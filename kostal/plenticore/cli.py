@@ -1,14 +1,17 @@
-from kostal.plenticore import PlenticoreApiClient
 import asyncio
+from ast import literal_eval
+from collections import defaultdict
+from inspect import iscoroutinefunction
+import os
+import re
+import tempfile
+import traceback
+from typing import Callable
 from aiohttp import ClientSession
 from prompt_toolkit import PromptSession, print_formatted_text
-import os
-import tempfile
-from ast import literal_eval
-from inspect import iscoroutinefunction
-import traceback
 import click
-from typing import Callable
+from kostal.plenticore import PlenticoreApiClient
+
 
 class SessionCache:
     """Persistent the session in a temporary file."""
@@ -16,7 +19,8 @@ class SessionCache:
         self.host = host
 
     def read_session_id(self) -> str:
-        file = os.path.join(tempfile.gettempdir(), f'plenticore-session-{self.host}')
+        file = os.path.join(tempfile.gettempdir(),
+                            f'plenticore-session-{self.host}')
         if os.path.isfile(file):
             with open(file, 'rt') as f:
                 return f.readline(256)
@@ -24,13 +28,13 @@ class SessionCache:
             return None
 
     def write_session_id(self, id: str):
-        file = os.path.join(tempfile.gettempdir(), f'plenticore-session-{self.host}')
+        file = os.path.join(tempfile.gettempdir(),
+                            f'plenticore-session-{self.host}')
         f = os.open(file, os.O_WRONLY | os.O_TRUNC | os.O_CREAT, mode=0o600)
         try:
             os.write(f, id.encode('ascii'))
         finally:
             os.close(f)
-
 
 
 class PlenticoreShell:
@@ -45,13 +49,14 @@ class PlenticoreShell:
         session_id = self._session_cache.read_session_id()
         if session_id is not None:
             self.client.session_id = session_id
-            print_formatted_text('Trying to reuse existing session... ', end=None)
+            print_formatted_text('Trying to reuse existing session... ',
+                                 end=None)
             me = await self.client.get_me()
             if me.is_authenticated:
                 print_formatted_text('Success')
                 return
-            else:
-                print_formatted_text('Failed')
+
+            print_formatted_text('Failed')
 
         if passwd is not None:
             print_formatted_text('Logging in... ', end=None)
@@ -65,7 +70,7 @@ class PlenticoreShell:
 
     async def run(self, passwd):
         session = PromptSession()
-        print_formatted_text(flush=True) # Initialize output
+        print_formatted_text(flush=True)  # Initialize output
 
         # Test commands:
         # get_settings
@@ -82,7 +87,8 @@ class PlenticoreShell:
 
                 if text.strip().lower() == 'exit':
                     raise EOFError()
-                elif text.strip() == '':
+
+                if text.strip() == '':
                     continue
                 else:
                     # TODO split does not know about lists or dicts or strings with spaces
@@ -141,7 +147,6 @@ class PlenticoreShell:
             print_formatted_text(result)
 
 
-
 async def repl_main(host, port, passwd):
     async with ClientSession() as session:
         client = PlenticoreApiClient(session, host=host, port=port)
@@ -149,7 +154,9 @@ async def repl_main(host, port, passwd):
         shell = PlenticoreShell(client)
         await shell.run(passwd)
 
-async def comman_main(host: str, port: int, passwd: str, fn: Callable[[PlenticoreApiClient], None]):
+
+async def comman_main(host: str, port: int, passwd: str,
+                      fn: Callable[[PlenticoreApiClient], None]):
     async with ClientSession() as session:
         client = PlenticoreApiClient(session, host=host, port=port)
         session_cache = SessionCache(host)
@@ -165,26 +172,29 @@ async def comman_main(host: str, port: int, passwd: str, fn: Callable[[Plenticor
         await fn(client)
 
 
-
-
 class GlobalArgs:
     """Global arguments over all sub commands."""
-    pass
+    def __init__(self):
+        self.host = None
+        self.port = None
+        self.password = None
+        self.password_file = None
+
 
 pass_global_args = click.make_pass_decorator(GlobalArgs, ensure=True)
 
 
 @click.group()
-@click.option('--host',
-              help='hostname or ip of plenticore inverter')
-@click.option('--port', default=80,
-              help='port of plenticore (default 80)')
-@click.option('--password', default=None,
-              help='the password')
-@click.option('--password-file', default='secrets',
-              help='password file (default "secrets" in the current working directory)')
+@click.option('--host', help='hostname or ip of plenticore inverter')
+@click.option('--port', default=80, help='port of plenticore (default 80)')
+@click.option('--password', default=None, help='the password')
+@click.option(
+    '--password-file',
+    default='secrets',
+    help='password file (default "secrets" in the current working directory)')
 @pass_global_args
 def cli(global_args, host, port, password, password_file):
+    """Handling of global arguments with click"""
     if password is not None:
         global_args.passwd = password
     elif os.path.isfile(password_file):
@@ -196,11 +206,14 @@ def cli(global_args, host, port, password, password_file):
     global_args.host = host
     global_args.port = port
 
+
 @cli.command()
 @pass_global_args
 def repl(global_args):
     """Provides a simple REPL for executing API requests to plenticore inverters."""
-    asyncio.run(repl_main(global_args.host, global_args.port, global_args.passwd))
+    asyncio.run(
+        repl_main(global_args.host, global_args.port, global_args.passwd))
+
 
 @cli.command()
 @pass_global_args
@@ -212,7 +225,9 @@ def all_settings(global_args):
             for x in v:
                 print(f'{k}/{x.id}')
 
-    asyncio.run(comman_main(global_args.host, global_args.port, global_args.passwd, fn))
+    asyncio.run(
+        comman_main(global_args.host, global_args.port, global_args.passwd,
+                    fn))
 
 
 @cli.command()
@@ -229,27 +244,29 @@ def read_settings(global_args, ids):
         read-settings devices:local/Battery:MinSoc devices:local/Battery:MinHomeComsumption
     """
     async def fn(client: PlenticoreApiClient):
-        settings = await client.get_settings()
-
-        query = {}
+        query = defaultdict(list)
         for id in ids:
-            module, setting = id.split(sep='/', maxsplit=-1)
-            if module in query:
-                query[module].append(setting)
-            else:
-                query[module] = [setting]
+            m = re.match(r'(?P<module_id>.+)/(?P<setting_id>.+)', id)
+            if not m:
+                raise Exception(f'Invalid format of {id}')
+
+            module_id = m.group('module_id')
+            setting_id = m.group('setting_id')
+
+            query[module_id].append(setting_id)
 
         result = {}
-        for module, settings in query.items():
-            values = await client.get_setting_values(module, settings)
-            for id, val in values.items():
-                result[f'{module}/{id}'] = val
+        for module_id, setting_ids in query.items():
+            values = await client.get_setting_values(module_id, setting_ids)
+            for setting_id, val in values.items():
+                result[f'{module_id}/{setting_id}'] = val
 
         for k, v in result.items():
             print(f'{k}={v}')
 
-    asyncio.run(comman_main(global_args.host, global_args.port, global_args.passwd, fn))
-
+    asyncio.run(
+        comman_main(global_args.host, global_args.port, global_args.passwd,
+                    fn))
 
 
 @cli.command()
@@ -265,23 +282,25 @@ def write_settings(global_args, id_values):
         write-settings devices:local/Battery:MinSoc=15
         """
     async def fn(client: PlenticoreApiClient):
-        settings = await client.get_settings()
-
-        query = {}
+        query = defaultdict(dict)
         for id_value in id_values:
-            id, value = id_value.split(sep='=', maxsplit=2)
-            module, setting = id.split(sep='/', maxsplit=2)
+            m = re.match(r'(?P<module_id>.+)/(?P<setting_id>.+)=(?P<value>.+)',
+                         id_value)
+            if not m:
+                raise Exception(f'Invalid format of {id_value}')
 
-            if module in query:
-                query[module][setting] = value
-            else:
-                query[module] = {setting: value}
+            module_id = m.group('module_id')
+            setting_id = m.group('setting_id')
+            value = m.group('value')
 
-        result = {}
-        for module, setting_values in query.items():
-            await client.set_setting_values(module, setting_values)
+            query[module_id][setting_id] = value
 
-    asyncio.run(comman_main(global_args.host, global_args.port, global_args.passwd, fn))
+        for module_id, setting_values in query.items():
+            await client.set_setting_values(module_id, setting_values)
+
+    asyncio.run(
+        comman_main(global_args.host, global_args.port, global_args.passwd,
+                    fn))
 
 
 # entry point for pycharm; should not be used for commandline usage
