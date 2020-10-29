@@ -217,6 +217,57 @@ def repl(global_args):
 
 @cli.command()
 @pass_global_args
+def all_processdata(global_args):
+    """Returns a list of all available process data."""
+    async def fn(client: PlenticoreApiClient):
+        data = await client.get_process_data()
+        for k, v in data.items():
+            for x in v:
+                print(f'{k}/{x}')
+
+    asyncio.run(
+        comman_main(global_args.host, global_args.port, global_args.passwd,
+                    fn))
+
+
+@cli.command()
+@click.argument('ids', required=True, nargs=-1)
+@pass_global_args
+def read_processdata(global_args, ids):
+    """Returns the values of the given process data.
+
+    IDS is the identifier (<module_id>/<processdata_id>) of one or more processdata
+    to read.
+
+    \b
+    Examples:
+        read-processdata devices:local/Inverter:State
+    """
+    async def fn(client: PlenticoreApiClient):
+        query = defaultdict(list)
+        for id in ids:
+            m = re.match(r'(?P<module_id>.+)/(?P<processdata_id>.+)', id)
+            if not m:
+                raise Exception(f'Invalid format of {id}')
+
+            module_id = m.group('module_id')
+            setting_id = m.group('processdata_id')
+
+            query[module_id].append(setting_id)
+
+        values = await client.get_process_data_values(query)
+
+        for k, v in values.items():
+            for x in v:
+                print(f'{k}/{x.id}={x.value}')
+
+    asyncio.run(
+        comman_main(global_args.host, global_args.port, global_args.passwd,
+                    fn))
+
+
+@cli.command()
+@pass_global_args
 def all_settings(global_args):
     """Returns the ids of all settings."""
     async def fn(client: PlenticoreApiClient):

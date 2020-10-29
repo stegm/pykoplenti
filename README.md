@@ -1,4 +1,4 @@
-# Project Title
+# Kostal Plenticore Python Library
 
 Provides a library and command line interface for the REST-API of Kostal Plenticore Solar Inverter.
 
@@ -6,10 +6,12 @@ Provides a library and command line interface for the REST-API of Kostal Plentic
 
 * Authenticate
 * Read/Write settings
+* Read process data
+* Full async-Support for reading and writing data
+* Commandline interface for shell access
 
 **Planned**
 * Read events
-* Read process data
 
 
 ## Getting Started

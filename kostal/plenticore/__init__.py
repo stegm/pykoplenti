@@ -255,10 +255,7 @@ class PlenticoreApiClient:
             session_response = await resp.json()
             self.session_id = session_response['sessionId']
 
-    def _session_request(self,
-                         path: str,
-                         method='GET',
-                         **kwargs) -> ClientResponse:
+    def _session_request(self, path: str, method='GET', **kwargs):
         """Make an request on the current active session."""
         # TODO exception if session does not exist
         headers = {'authorization': f'Session {self.session_id}'}
@@ -298,15 +295,86 @@ class PlenticoreApiClient:
             modules_response = await resp.json()
             return list([ModuleData(x) for x in modules_response])
 
-    async def get_process_data(self, module_id: str) -> Iterable[ProcessData]:
-        """Returns list of all available process-data identifiers of a module."""
-        async with self._session_request(f'processdata/{module_id}') as resp:
+    async def get_process_data(self) -> Dict[str, Iterable[str]]:
+        """Returns a dictionary of all processdata ids and its module ids."""
+        async with self._session_request('processdata') as resp:
             await self._check_response(resp)
             data_response = await resp.json()
-            return list(
-                [ProcessData(x) for x in data_response[0]['processdata']])
+            return {x['moduleid']: x['processdataids'] for x in data_response}
 
-    async def get_settings(self) -> Dict[str, SettingsData]:
+    async def get_process_data_values(
+        self,
+        module_id: Union[str, Dict[str, Iterable[str]]],
+        processdata_id: Union[str, Iterable[str]] = None
+    ) -> Dict[str, Iterable[ProcessData]]:
+        """Returns a dictionary of process data of one or more modules.
+
+        :param module_id: required, must be a module id or a dictionary with the
+                          module id as key and the process data ids as values.
+        :param processdata_id: optional, if given `module_id` must be string. Can
+                               be either a string or a list of string. If missing
+                               all process data ids are returned.
+        """
+        if isinstance(module_id, str) and processdata_id is None:
+            # get all process data of a module
+            async with self._session_request(
+                    f'processdata/{module_id}') as resp:
+                await self._check_response(resp)
+                data_response = await resp.json()
+                return {
+                    data_response[0]['moduleid']:
+                    list([
+                        ProcessData(x) for x in data_response[0]['processdata']
+                    ])
+                }
+
+        if isinstance(module_id, str) and isinstance(processdata_id, str):
+            # get a single process data of a module
+            async with self._session_request(
+                    f'processdata/{module_id}/{processdata_id}') as resp:
+                await self._check_response(resp)
+                data_response = await resp.json()
+                return {
+                    data_response[0]['moduleid']:
+                    list([
+                        ProcessData(x) for x in data_response[0]['processdata']
+                    ])
+                }
+
+        if isinstance(module_id, str) and hasattr(processdata_id, '__iter__'):
+            # get multiple process data of a module
+            ids = ",".join(processdata_id)
+            async with self._session_request(
+                    f'processdata/{module_id}/{ids}') as resp:
+                await self._check_response(resp)
+                data_response = await resp.json()
+                return {
+                    data_response[0]['moduleid']:
+                    list([
+                        ProcessData(x) for x in data_response[0]['processdata']
+                    ])
+                }
+
+        if isinstance(module_id, dict) and processdata_id is None:
+            # get multiple process data of multiple modules
+            request = []
+            for mid, pids in module_id.items():
+                request.append(dict(moduleid=mid, processdataids=pids))
+
+            async with self._session_request(f'processdata',
+                                             method='POST',
+                                             json=request) as resp:
+                await self._check_response(resp)
+                data_response = await resp.json()
+                return {
+                    x['moduleid']:
+                    list(ProcessData(y) for y in x['processdata'])
+                    for x in data_response
+                }
+
+        raise TypeError('Invalid combination of module_id and processdata_id.')
+
+    async def get_settings(self) -> Dict[str, Iterable[SettingsData]]:
         """Returns list of all modules with a list of available settings identifiers."""
         async with self._session_request('settings') as resp:
             await self._check_response(resp)
