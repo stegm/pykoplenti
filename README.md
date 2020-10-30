@@ -9,6 +9,7 @@ Provides a library and command line interface for the REST-API of Kostal Plentic
 * Read process data
 * Full async-Support for reading and writing data
 * Commandline interface for shell access
+* Dynamic data model
 
 **Planned**
 * Read events
@@ -42,6 +43,9 @@ Now you can use the command line interface to do some queries:
 scb:network/Hostname=scb
 ```
 
+## Documentation
+
+*  [Command Line Interface](doc/command_line.md)
 
 ## Built With
 

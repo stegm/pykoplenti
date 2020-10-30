@@ -244,18 +244,22 @@ def read_processdata(global_args, ids):
         read-processdata devices:local/Inverter:State
     """
     async def fn(client: PlenticoreApiClient):
-        query = defaultdict(list)
-        for id in ids:
-            m = re.match(r'(?P<module_id>.+)/(?P<processdata_id>.+)', id)
-            if not m:
-                raise Exception(f'Invalid format of {id}')
+        if len(ids) == 1 and '/' not in ids[0]:
+            # all process data ids of a moudle
+            values = await client.get_process_data_values(ids[0])
+        else:
+            query = defaultdict(list)
+            for id in ids:
+                m = re.match(r'(?P<module_id>.+)/(?P<processdata_id>.+)', id)
+                if not m:
+                    raise Exception(f'Invalid format of {id}')
 
-            module_id = m.group('module_id')
-            setting_id = m.group('processdata_id')
+                module_id = m.group('module_id')
+                setting_id = m.group('processdata_id')
 
-            query[module_id].append(setting_id)
+                query[module_id].append(setting_id)
 
-        values = await client.get_process_data_values(query)
+            values = await client.get_process_data_values(query)
 
         for k, v in values.items():
             for x in v:
@@ -267,14 +271,16 @@ def read_processdata(global_args, ids):
 
 
 @cli.command()
+@click.option('--rw', is_flag=True, default=False, help='display only writable settings')
 @pass_global_args
-def all_settings(global_args):
+def all_settings(global_args, rw):
     """Returns the ids of all settings."""
     async def fn(client: PlenticoreApiClient):
         settings = await client.get_settings()
         for k, v in settings.items():
             for x in v:
-                print(f'{k}/{x.id}')
+                if not rw or x.access == 'readwrite':
+                    print(f'{k}/{x.id}')
 
     asyncio.run(
         command_main(global_args.host, global_args.port, global_args.passwd,
