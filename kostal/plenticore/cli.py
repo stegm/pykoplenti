@@ -155,8 +155,8 @@ async def repl_main(host, port, passwd):
         await shell.run(passwd)
 
 
-async def comman_main(host: str, port: int, passwd: str,
-                      fn: Callable[[PlenticoreApiClient], None]):
+async def command_main(host: str, port: int, passwd: str,
+                       fn: Callable[[PlenticoreApiClient], None]):
     async with ClientSession() as session:
         client = PlenticoreApiClient(session, host=host, port=port)
         session_cache = SessionCache(host)
@@ -226,8 +226,8 @@ def all_processdata(global_args):
                 print(f'{k}/{x}')
 
     asyncio.run(
-        comman_main(global_args.host, global_args.port, global_args.passwd,
-                    fn))
+        command_main(global_args.host, global_args.port, global_args.passwd,
+                     fn))
 
 
 @cli.command()
@@ -262,8 +262,8 @@ def read_processdata(global_args, ids):
                 print(f'{k}/{x.id}={x.value}')
 
     asyncio.run(
-        comman_main(global_args.host, global_args.port, global_args.passwd,
-                    fn))
+        command_main(global_args.host, global_args.port, global_args.passwd,
+                     fn))
 
 
 @cli.command()
@@ -277,8 +277,8 @@ def all_settings(global_args):
                 print(f'{k}/{x.id}')
 
     asyncio.run(
-        comman_main(global_args.host, global_args.port, global_args.passwd,
-                    fn))
+        command_main(global_args.host, global_args.port, global_args.passwd,
+                     fn))
 
 
 @cli.command()
@@ -316,8 +316,8 @@ def read_settings(global_args, ids):
             print(f'{k}={v}')
 
     asyncio.run(
-        comman_main(global_args.host, global_args.port, global_args.passwd,
-                    fn))
+        command_main(global_args.host, global_args.port, global_args.passwd,
+                     fn))
 
 
 @cli.command()
@@ -350,8 +350,8 @@ def write_settings(global_args, id_values):
             await client.set_setting_values(module_id, setting_values)
 
     asyncio.run(
-        comman_main(global_args.host, global_args.port, global_args.passwd,
-                    fn))
+        command_main(global_args.host, global_args.port, global_args.passwd,
+                     fn))
 
 
 # entry point for pycharm; should not be used for commandline usage
