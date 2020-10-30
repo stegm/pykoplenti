@@ -1,4 +1,5 @@
 from base64 import b64encode, b64decode
+from collections.abc import Mapping
 import hmac
 import hashlib
 from os import urandom
@@ -70,7 +71,6 @@ class ModuleData:
     def __repr__(self):
         return dumps(self._raw)
 
-
 class ProcessData:
     """Represents a single process data."""
     def __init__(self, raw):
@@ -93,6 +93,27 @@ class ProcessData:
 
     def __repr__(self):
         return dumps(self._raw)
+
+
+class ProcessDataCollection(Mapping):
+    """Represents a single process data value."""
+    def __init__(self, raw):
+        self._process_data = list([ProcessData(x) for x in raw])
+
+    def __len__(self):
+        return len(self._process_data)
+
+    def __iter__(self):
+        return iter(self._process_data)
+
+    def __getitem__(self, item):
+        try:
+            return next(x for x in self._process_data if x.id == item)
+        except StopIteration:
+            raise KeyError(item)
+
+    def __repr__(self):
+        return self._raw
 
 
 class SettingsData:
@@ -306,7 +327,7 @@ class PlenticoreApiClient:
         self,
         module_id: Union[str, Dict[str, Iterable[str]]],
         processdata_id: Union[str, Iterable[str]] = None
-    ) -> Dict[str, Iterable[ProcessData]]:
+    ) -> Dict[str, ProcessDataCollection]:
         """Returns a dictionary of process data of one or more modules.
 
         :param module_id: required, must be a module id or a dictionary with the
@@ -322,10 +343,7 @@ class PlenticoreApiClient:
                 await self._check_response(resp)
                 data_response = await resp.json()
                 return {
-                    data_response[0]['moduleid']:
-                    list([
-                        ProcessData(x) for x in data_response[0]['processdata']
-                    ])
+                    data_response[0]['moduleid']: ProcessDataCollection(data_response[0]['processdata'])
                 }
 
         if isinstance(module_id, str) and isinstance(processdata_id, str):
@@ -335,11 +353,9 @@ class PlenticoreApiClient:
                 await self._check_response(resp)
                 data_response = await resp.json()
                 return {
-                    data_response[0]['moduleid']:
-                    list([
-                        ProcessData(x) for x in data_response[0]['processdata']
-                    ])
+                    data_response[0]['moduleid']: ProcessDataCollection(data_response[0]['processdata'])
                 }
+
 
         if isinstance(module_id, str) and hasattr(processdata_id, '__iter__'):
             # get multiple process data of a module
@@ -349,11 +365,9 @@ class PlenticoreApiClient:
                 await self._check_response(resp)
                 data_response = await resp.json()
                 return {
-                    data_response[0]['moduleid']:
-                    list([
-                        ProcessData(x) for x in data_response[0]['processdata']
-                    ])
+                    data_response[0]['moduleid']: ProcessDataCollection(data_response[0]['processdata'])
                 }
+
 
         if isinstance(module_id, dict) and processdata_id is None:
             # get multiple process data of multiple modules
@@ -367,9 +381,8 @@ class PlenticoreApiClient:
                 await self._check_response(resp)
                 data_response = await resp.json()
                 return {
-                    x['moduleid']:
-                    list(ProcessData(y) for y in x['processdata'])
-                    for x in data_response
+                    x['moduleid']: ProcessDataCollection(x['processdata'])
+                        for x in data_response
                 }
 
         raise TypeError('Invalid combination of module_id and processdata_id.')

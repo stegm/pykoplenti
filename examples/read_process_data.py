@@ -19,8 +19,8 @@ async def async_main(host, passwd):
         data = await client.get_process_data_values('devices:local', ['Inverter:State', 'Home_P'])
 
         device_local = data['devices:local']
-        inverter_state = next(x for x in device_local if x.id == 'Inverter:State')
-        home_p = next(x for x in device_local if x.id == 'Home_P')
+        inverter_state = device_local['Inverter:State']
+        home_p = device_local['Home_P']
 
         print(f'Inverter-State: {inverter_state.value}\nHome-P: {home_p.value}\n')
 
