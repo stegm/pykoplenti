@@ -21,31 +21,89 @@ Provides a library and command line interface for the REST-API of Kostal Plentic
 
 You will need Python >=3.8.
 
-### Installing
+### Installing the library
 
-Checkout the code from Github:
+Download the latest Wheel Package (*.whl) from https://github.com/stegm/kostal_plenticore/releases/.
 
-```shell script
-~$ git clone https://github.com/stegm/kostal_plenticore.git
+Install the library. I recommend to use a [virtual environment](https://docs.python.org/3/library/venv.html) for this, 
+because it installs the dependecies independently from the system.
+
+```shell
+$ pip install kostal_plenticore-<VERSION>-py3-none-any.whl
 ```
 
-Then install the library in editable mode.
+### Using the command line interface
 
-```shell script
-~$ cd kostal_plenticore
-~/kostal_plenticore$ pip install --editable . 
+
+Installing the libray provides a new command.
+
+```shell
+$ plenticore --help
+Usage: plenticore [OPTIONS] COMMAND [ARGS]...
+
+  Handling of global arguments with click
+
+Options:
+  --host TEXT           hostname or ip of plenticore inverter
+  --port INTEGER        port of plenticore (default 80)
+  --password TEXT       the password
+  --password-file TEXT  password file (default "secrets" in the current
+                        working directory)
+
+  --help                Show this message and exit.
+
+Commands:
+  all-processdata   Returns a list of all available process data.
+  all-settings      Returns the ids of all settings.
+  read-processdata  Returns the values of the given process data.
+  read-settings     Read the value of the given settings.
+  repl              Provides a simple REPL for executing API requests to...
+  write-settings    Write the values of the given settings.
 ```
 
-Now you can use the command line interface to do some queries:
+Visit [Command Line Help](doc/command_line.md) for example usage.
+ 
+### Using the library from python
 
-```shell script
-~/kostal_plenticore$ plenticore --host 192.168.1.100 --password secret read-settings scb:network/Hostname
-scb:network/Hostname=scb
+The library is fullly async, there for you need an async loop and an async `ClientSession`. Please refer to the
+example directory for full code.
+
+Import the client module:
+
+```python
+from kostal.plenticore import PlenticoreApiClient
 ```
+
+To communicate with the inverter you need to instantiate the client:
+ 
+```python
+# session is a aiohttp ClientSession
+client = PlenticoreApiClient(session, '192.168.1.100')
+```
+
+Login to gain full access to process data and settings:
+
+```python
+await client.login(passwd)
+```
+
+Now you can access the API. For example to read process data values:
+
+```python
+data = await client.get_process_data_values('devices:local', ['Inverter:State', 'Home_P'])
+
+device_local = data['devices:local']
+inverter_state = device_local['Inverter:State']
+home_p = device_local['Home_P']
+```
+
+See the full example here: [read_process_data.py](examples/read_process_data.py).
+
 
 ## Documentation
 
 *  [Command Line Interface](doc/command_line.md)
+*  [Examples](examples/)
 
 ## Built With
 
