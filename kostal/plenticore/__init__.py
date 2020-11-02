@@ -178,6 +178,8 @@ class PlenticoreApiClient:
     BASE_URL = '/api/v1/'
 
     ERRORS = {
+        400: 'Invalid user/Authentication failed',
+        403: 'User is lockec',
         404: 'Module or setting not found',
         503: 'Internal communication error',
     }
@@ -197,6 +199,13 @@ class PlenticoreApiClient:
         return base.join(URL(path))
 
     async def login(self, password: str, user: str = 'user'):
+        """Logins the given user (default is 'user') with the given
+        password.
+
+        :raise ClientRequestError with status 400 if authentication failed
+        :raise aiohttp.client_exceptions.ClientConnectorError if host is not reachable
+        :raise asyncio.exceptions.TimeoutError if a timeout occurs
+        """
         # Step 1 start authentication
         client_nonce = urandom(12)
 
@@ -208,6 +217,7 @@ class PlenticoreApiClient:
         async with self.websession.request("POST",
                                            self._create_url('auth/start'),
                                            json=start_request) as resp:
+            await self._check_response(resp)
             start_response = await resp.json()
             server_nonce = b64decode(start_response['nonce'])
             transaction_id = b64decode(start_response['transactionId'])
@@ -245,6 +255,7 @@ class PlenticoreApiClient:
         async with self.websession.request("POST",
                                            self._create_url('auth/finish'),
                                            json=finish_request) as resp:
+            await self._check_response(resp)
             finish_response = await resp.json()
             token = finish_response['token']
             signature = b64decode(finish_response['signature'])
@@ -273,6 +284,7 @@ class PlenticoreApiClient:
                 "POST",
                 self._create_url('auth/create_session'),
                 json=session_request) as resp:
+            await self._check_response(resp)
             session_response = await resp.json()
             self.session_id = session_response['sessionId']
 
