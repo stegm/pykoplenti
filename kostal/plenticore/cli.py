@@ -7,7 +7,7 @@ import re
 import tempfile
 import traceback
 from typing import Callable
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 from prompt_toolkit import PromptSession, print_formatted_text
 import click
 from kostal.plenticore import PlenticoreApiClient
@@ -148,7 +148,7 @@ class PlenticoreShell:
 
 
 async def repl_main(host, port, passwd):
-    async with ClientSession() as session:
+    async with ClientSession(timeout=ClientTimeout(total=10)) as session:
         client = PlenticoreApiClient(session, host=host, port=port)
 
         shell = PlenticoreShell(client)
@@ -157,7 +157,7 @@ async def repl_main(host, port, passwd):
 
 async def command_main(host: str, port: int, passwd: str,
                        fn: Callable[[PlenticoreApiClient], None]):
-    async with ClientSession() as session:
+    async with ClientSession(timeout=ClientTimeout(total=10)) as session:
         client = PlenticoreApiClient(session, host=host, port=port)
         session_cache = SessionCache(host)
 
