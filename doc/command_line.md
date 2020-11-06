@@ -102,4 +102,16 @@ scb:network/Hostname=scb
 $ plenticore --host 192.168.1.100 --password verysecret write-settings devices:local/Battery:MinSoc=10
 ```
 
+### REPL
 
+A REPL is provided for simple interactive tests. All methods of the `PlenticoreApiClient` class can be called. The 
+arguments must be given separated by spaces by using python literals. 
+
+```shell script
+$ plenticore --host 192.168.1.100 repl
+(plenticore)> get_me
+Me(locked=False, active=False, authenticated=False, permissions=[] anonymous=True role=NONE)
+(plenticore)> get_process_data_values "devices:local" "Inverter:State"
+devices:local:
+ProcessData(id=Inverter:State, unit=, value=6.0)
+```
