@@ -9,6 +9,8 @@ import logging
 from aiohttp import ClientSession, ClientResponse
 from yarl import URL
 from Crypto.Cipher import AES
+import functools
+import contextlib
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +49,34 @@ class MeData:
                f'authenticated={self.is_authenticated}, ' \
                f'permissions={str(self.permissions)} anonymous={self.is_anonymous} ' \
                f'role={self.role})'
+
+    def __repr__(self):
+        return dumps(self._raw)
+
+class VersionData:
+    """Represent the data of the 'version'-request."""
+    def __init__(self, raw):
+        self._raw = raw
+
+    @property
+    def api_version(self) -> str:
+        return self._raw['api_version']
+
+    @property
+    def hostname(self) -> bool:
+        return self._raw['hostname']
+
+    @property
+    def name(self) -> bool:
+        return self._raw['name']
+
+    @property
+    def sw_version(self) -> Iterable[str]:
+        return self._raw['sw_version']
+
+    def __str__(self):
+        return f'Version(api_version={self.api_version}, hostname={self.hostname}, ' \
+               f'name={self.name}, sw_version={str(self.sw_version)})'
 
     def __repr__(self):
         return dumps(self._raw)
@@ -158,37 +188,66 @@ class SettingsData:
         return dumps(self._raw)
 
 
-class ClientRequestError(Exception):
-    """Exception raised for client API errors.
+class PlenticoreApiException(Exception):
+    """Base exception for Plenticore API calls."""
+    def __init__(self, msg):
+        self.msg = msg
 
-    Attributes:
-        status -- status code of server response
-        error -- error message of status code
-        message -- optional message of response
-    """
-    def __init__(self, status, error, message):
-        self.status = status
+    def __str__(self):
+        return f'Plenticore API Error: {self.msg}'
+
+class PlenticoreInternalCommunicationException(PlenticoreApiException):
+    """Exception for internal communication error response."""
+    def __init__(self, status_code: int, error: str):
+        super().__init__(f'Internal communication error ([{status_code}] - {error})')
+        self.status_code = status_code
         self.error = error
-        self.message = message
+
+class PlenticoreAuthenticationException(PlenticoreApiException):
+    """Exception for authentiation or user error response."""
+    def __init__(self, status_code: int, error: str):
+        super().__init__(f'Invalid user/Authentication failed ([{status_code}] - {error})')
+        self.status_code = status_code
+        self.error = error
+
+class PlenticoreUserLockedException(PlenticoreApiException):
+    """Exception for user locked error response."""
+    def __init__(self, status_code: int, error: str):
+        super().__init__(f'User is locked ([{status_code}] - {error})')
+        self.status_code = status_code
+        self.error = error
+
+class PlenticoreModuleNotFoundException(PlenticoreApiException):
+    """Exception for module or setting not found response."""
+    def __init__(self, status_code: int, error: str):
+        super().__init__(f'Module or setting not found ([{status_code}] - {error})')
+        self.status_code = status_code
+        self.error = error
 
 
-class PlenticoreApiClient:
+class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
     """Client for REST-API of plenticore inverters."""
 
     BASE_URL = '/api/v1/'
 
-    ERRORS = {
-        400: 'Invalid user/Authentication failed',
-        403: 'User is lockec',
-        404: 'Module or setting not found',
-        503: 'Internal communication error',
-    }
-
     def __init__(self, websession: ClientSession, host: str, port: int = 80):
+        """Create a new client.
+
+        :param websession: A aiohttp ClientSession for all requests
+        :param host: The hostname or ip of the plenticore inverter
+        :param port: The port of the API interface (default 80)
+        """
         self.websession = websession
         self.host = host
         self.port = port
         self.session_id = None
+        self._password = None
+        self._user = None
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        """Logout support for context manager."""
+        if self.session_id is not None:
+            await self.logout()
 
     def _create_url(self, path: str) -> URL:
         """Creates a REST-API URL with the given path as suffix."""
@@ -199,18 +258,29 @@ class PlenticoreApiClient:
         return base.join(URL(path))
 
     async def login(self, password: str, user: str = 'user'):
-        """Logins the given user (default is 'user') with the given
+        """Login the given user (default is 'user') with the given
         password.
 
-        :raise ClientRequestError with status 400 if authentication failed
+        :raise PlenticoreAuthenticationException if authentication failed
         :raise aiohttp.client_exceptions.ClientConnectorError if host is not reachable
         :raise asyncio.exceptions.TimeoutError if a timeout occurs
         """
+
+        self._password = password
+        self._user = user
+        try:
+            await self._login()
+        except:
+            self._password = None
+            self._user = None
+            raise
+
+    async def _login(self):
         # Step 1 start authentication
         client_nonce = urandom(12)
 
         start_request = {
-            "username": user,
+            "username": self._user,
             "nonce": b64encode(client_nonce).decode('utf-8')
         }
 
@@ -225,14 +295,14 @@ class PlenticoreApiClient:
             rounds = start_response['rounds']
 
         # Step 2 finish authentication (RFC5802)
-        salted_passwd = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'),
+        salted_passwd = hashlib.pbkdf2_hmac('sha256', self._password.encode('utf-8'),
                                             salt, rounds)
         client_key = hmac.new(salted_passwd, 'Client Key'.encode('utf-8'),
                               hashlib.sha256).digest()
         stored_key = hashlib.sha256(client_key).digest()
 
         auth_msg = 'n={user},r={client_nonce},r={server_nonce},s={salt},i={rounds},c=biws,r={server_nonce}'.format(
-            user=user,
+            user=self._user,
             client_nonce=b64encode(client_nonce).decode('utf-8'),
             server_nonce=b64encode(server_nonce).decode('utf-8'),
             salt=b64encode(salt).decode('utf-8'),
@@ -274,9 +344,14 @@ class PlenticoreApiClient:
             token.encode('utf-8'))
 
         session_request = {
-            'transactionId': b64encode(transaction_id).decode('utf-8'),
+            # AES initialization vector
             'iv': b64encode(session_nonce).decode('utf-8'),
+            # AES GCM tag
             'tag': b64encode(auth_tag).decode('utf-8'),
+            # ID of authentication transaction
+            'transactionId': b64encode(transaction_id).decode('utf-8'),
+            # Only the token or token and service code (separated by colon). Encrypted with
+            # AES using the protocol key
             'payload': b64encode(cipher_text).decode('utf-8'),
         }
 
@@ -301,25 +376,68 @@ class PlenticoreApiClient:
         """Check if the given response contains an error."""
 
         if resp.status != 200:
-            if resp.status in PlenticoreApiClient.ERRORS:
-                error = PlenticoreApiClient.ERRORS[resp.status]
-            else:
-                error = None
-
             try:
                 response = await resp.json()
-                message = response['message']
+                error = response['message']
             except:
-                message = None
+                error = None
 
-            raise ClientRequestError(resp.status, error, message)
+            if resp.status == 400:
+                raise PlenticoreAuthenticationException(resp.status, error)
+
+            if resp.status == 403:
+                raise PlenticoreUserLockedException(resp.status, error)
+
+            if resp.status == 404:
+                raise PlenticoreModuleNotFoundException(resp.status, error)
+
+            if resp.status == 503:
+                raise PlenticoreInternalCommunicationException(resp.status, error)
+
+            # we got an undocumented status code
+            raise PlenticoreApiException(f'Unknown API response [{resp.status}] - {error}')
+
+    def _relogin(fn):
+        """Decorator for automatic relogin if session was expired."""
+
+        @functools.wraps(fn)
+        async def _wrapper(self, *args, **kwargs):
+            try:
+                return await fn(self, *args, **kwargs)
+            except PlenticoreAuthenticationException:
+                pass
+
+            print("Relogin")
+            await self._login()
+            return await fn(self, *args, **kwargs)
+
+        return _wrapper
+
+    async def logout(self):
+        """Deletes the current session."""
+        self._password = None
+        async with self._session_request('auth/logout', method='POST') as resp:
+            await self._check_response(resp)
 
     async def get_me(self) -> MeData:
-        """Returns information about the user."""
+        """Returns information about the user.
+
+        No login is required.
+        """
         async with self._session_request('auth/me') as resp:
             await self._check_response(resp)
             me_response = await resp.json()
             return MeData(me_response)
+
+    async def get_version(self) -> VersionData:
+        """Returns information about the API of the inverter.
+
+        No login is required.
+        """
+        async with self._session_request('info/version') as resp:
+            await self._check_response(resp)
+            response = await resp.json()
+            return VersionData(response)
 
     async def get_modules(self) -> Iterable[ModuleData]:
         """Returns list of all available modules (providing process data or settings)."""
@@ -328,6 +446,7 @@ class PlenticoreApiClient:
             modules_response = await resp.json()
             return list([ModuleData(x) for x in modules_response])
 
+    @_relogin
     async def get_process_data(self) -> Dict[str, Iterable[str]]:
         """Returns a dictionary of all processdata ids and its module ids."""
         async with self._session_request('processdata') as resp:
@@ -335,6 +454,7 @@ class PlenticoreApiClient:
             data_response = await resp.json()
             return {x['moduleid']: x['processdataids'] for x in data_response}
 
+    @_relogin
     async def get_process_data_values(
         self,
         module_id: Union[str, Dict[str, Iterable[str]]],
@@ -412,6 +532,7 @@ class PlenticoreApiClient:
 
             return result
 
+    @_relogin
     async def get_setting_values(
             self,
             module_id: str,
@@ -438,6 +559,7 @@ class PlenticoreApiClient:
         else:
             raise TypeError()
 
+    @_relogin
     async def set_setting_values(self, module_id: str, values: Dict[str, str]):
         """Writes a list of settings for one modules."""
         request = [{
