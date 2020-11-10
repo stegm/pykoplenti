@@ -29,13 +29,17 @@ Install the library. I recommend to use a [virtual environment](https://docs.pyt
 because it installs the dependecies independently from the system.
 
 ```shell
+# Install with command line support
+$ pip install kostal_plenticore-<VERSION>-py3-none-any.whl[CLI]
+
+# Install without command line support
 $ pip install kostal_plenticore-<VERSION>-py3-none-any.whl
 ```
 
 ### Using the command line interface
 
 
-Installing the libray provides a new command.
+Installing the libray with `CLI` provides a new command.
 
 ```shell
 $ plenticore --help
@@ -65,7 +69,7 @@ Visit [Command Line Help](doc/command_line.md) for example usage.
  
 ### Using the library from python
 
-The library is fullly async, there for you need an async loop and an async `ClientSession`. Please refer to the
+The library is fully async, there for you need an async loop and an async `ClientSession`. Please refer to the
 example directory for full code.
 
 Import the client module:
