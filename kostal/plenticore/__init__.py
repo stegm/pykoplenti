@@ -1,16 +1,17 @@
-from base64 import b64encode, b64decode
-from collections.abc import Mapping
-import hmac
-import hashlib
-from os import urandom
-from typing import Iterable, Dict, Union
-from json import dumps
-import logging
-from aiohttp import ClientSession, ClientResponse
-from yarl import URL
-from Crypto.Cipher import AES
-import functools
 import contextlib
+import functools
+import hashlib
+import hmac
+import logging
+from base64 import b64decode, b64encode
+from collections.abc import Mapping
+from json import dumps
+from os import urandom
+from typing import Dict, Iterable, Union
+
+from aiohttp import ClientResponse, ClientSession
+from Crypto.Cipher import AES
+from yarl import URL
 
 logger = logging.getLogger(__name__)
 
@@ -226,7 +227,36 @@ class PlenticoreModuleNotFoundException(PlenticoreApiException):
 
 
 class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
-    """Client for REST-API of plenticore inverters."""
+    """Client for the REST-API of Kostal Plenticore inverters.
+    
+    The RESP-API provides several scopes of information. Each scope provides a
+    dynamic set of data which can be retrieved using this interface. The scopes
+    are:
+
+    - process data (readonly, dynamic values of the operation)
+    - settings (some are writable, static values for configuration)
+
+    The data are grouped into modules. For example the module `devices:local`
+    provides a process data `Dc_P` which contains the value of the current
+    DC power.
+
+    To get all process data or settings the methods `get_process_data` or
+    `get_settings` can be used. Depending of the current logged in user the
+    returned data can vary.
+
+    The methods `get_process_data_values` and `get_setting_values` can be used 
+    to read process data or setting values from the inverter. You can use 
+    `set_setting_values` to write new setting values to the inverter if the
+    setting is writable.
+
+    The authorization system of the inverter comprises three states:
+    * not logged in (is_active=False, authenticated=False)
+    * logged in and active (is_active=True, authenticated=True)
+    * logged in and inactive (is_active=False, authenticated=False)
+
+    The current state can be queried with the `get_me` method. Depending of
+    this state some operation might not be available.
+    """
 
     BASE_URL = '/api/v1/'
 
@@ -250,7 +280,11 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
             await self.logout()
 
     def _create_url(self, path: str) -> URL:
-        """Creates a REST-API URL with the given path as suffix."""
+        """Creates a REST-API URL with the given path as suffix.
+        
+        :param path: path suffix, must not start with '/'
+        :return: a URL instance
+        """
         base = URL.build(scheme='http',
                          host=self.host,
                          port=self.port,
@@ -261,9 +295,9 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
         """Login the given user (default is 'user') with the given
         password.
 
-        :raise PlenticoreAuthenticationException if authentication failed
-        :raise aiohttp.client_exceptions.ClientConnectorError if host is not reachable
-        :raise asyncio.exceptions.TimeoutError if a timeout occurs
+        :raises PlenticoreAuthenticationException: if authentication failed
+        :raises aiohttp.client_exceptions.ClientConnectorError: if host is not reachable
+        :raises asyncio.exceptions.TimeoutError: if a timeout occurs
         """
 
         self._password = password
@@ -364,16 +398,25 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
             self.session_id = session_response['sessionId']
 
     def _session_request(self, path: str, method='GET', **kwargs):
-        """Make an request on the current active session."""
-        # TODO exception if session does not exist
-        headers = {'authorization': f'Session {self.session_id}'}
+        """Make an request on the current active session.
+        
+        :param path: the URL suffix
+        :param method: the request method, defaults to 'GET'
+        :param **kwargs: all other args are forwarded to the request
+        """
+        
+        headers = {}
+        if self.session_id is not None:
+            headers['authorization'] = f'Session {self.session_id}'
+        
         return self.websession.request(method,
                                        self._create_url(path),
                                        headers=headers,
                                        **kwargs)
 
     async def _check_response(self, resp: ClientResponse):
-        """Check if the given response contains an error."""
+        """Check if the given response contains an error and throws
+        the appropriate exception."""
 
         if resp.status != 200:
             try:
@@ -398,7 +441,7 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
             raise PlenticoreApiException(f'Unknown API response [{resp.status}] - {error}')
 
     def _relogin(fn):
-        """Decorator for automatic relogin if session was expired."""
+        """Decorator for automatic re-login if session was expired."""
 
         @functools.wraps(fn)
         async def _wrapper(self, *args, **kwargs):
@@ -407,14 +450,14 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
             except PlenticoreAuthenticationException:
                 pass
 
-            print("Relogin")
+            logger.debug('Request failed - try to re-login')
             await self._login()
             return await fn(self, *args, **kwargs)
 
         return _wrapper
 
     async def logout(self):
-        """Deletes the current session."""
+        """Logs the current user out."""
         self._password = None
         async with self._session_request('auth/logout', method='POST') as resp:
             await self._check_response(resp)
@@ -444,11 +487,15 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
         async with self._session_request('modules') as resp:
             await self._check_response(resp)
             modules_response = await resp.json()
-            return list([ModuleData(x) for x in modules_response])
+            return [ModuleData(x) for x in modules_response]
 
     @_relogin
     async def get_process_data(self) -> Dict[str, Iterable[str]]:
-        """Returns a dictionary of all processdata ids and its module ids."""
+        """Returns a dictionary of all processdata ids and its module ids.
+
+        :return: a dictionary with the module id as key and a list of process data ids
+                 as value
+        """
         async with self._session_request('processdata') as resp:
             await self._check_response(resp)
             data_response = await resp.json()
@@ -467,6 +514,8 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
         :param processdata_id: optional, if given `module_id` must be string. Can
                                be either a string or a list of string. If missing
                                all process data ids are returned.
+        :return: a dictionary with the module id as key and a instance of :py:class:`ProcessDataCollection`
+                 as value
         """
         if isinstance(module_id, str) and processdata_id is None:
             # get all process data of a module
@@ -488,7 +537,6 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
                     data_response[0]['moduleid']: ProcessDataCollection(data_response[0]['processdata'])
                 }
 
-
         if isinstance(module_id, str) and hasattr(processdata_id, '__iter__'):
             # get multiple process data of a module
             ids = ",".join(processdata_id)
@@ -499,7 +547,6 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
                 return {
                     data_response[0]['moduleid']: ProcessDataCollection(data_response[0]['processdata'])
                 }
-
 
         if isinstance(module_id, dict) and processdata_id is None:
             # get multiple process data of multiple modules
