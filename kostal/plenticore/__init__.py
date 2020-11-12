@@ -126,7 +126,7 @@ class ProcessData:
 
 
 class ProcessDataCollection(Mapping):
-    """Represents a single process data value."""
+    """Represents a collection of process data value."""
     def __init__(self, raw):
         self._process_data = list([ProcessData(x) for x in raw])
 
@@ -144,7 +144,6 @@ class ProcessDataCollection(Mapping):
 
     def __repr__(self):
         return self._raw
-
 
 class SettingsData:
     """Represents a single settings data."""
@@ -534,30 +533,68 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
 
     @_relogin
     async def get_setting_values(
-            self,
-            module_id: str,
-            setting_ids: Union[str, Iterable[str]] = None) -> Dict[str, str]:
-        """Returns specified or all settings of a module."""
-        if isinstance(setting_ids, str):
+        self,
+        module_id: Union[str, Dict[str, Iterable[str]]],
+        setting_id: Union[str, Iterable[str]] = None
+    ) -> Dict[str, Dict[str, str]]:
+        """Returns a dictionary of setting values of one or more modules.
+
+        :param module_id: required, must be a module id or a dictionary with the
+                          module id as key and the setting ids as values.
+        :param setting_id: optional, if given `module_id` must be string. Can
+                           be either a string or a list of string. If missing
+                           all setting ids are returned.
+        """
+        if isinstance(module_id, str) and setting_id is None:
+            # get all setting data of a module
             async with self._session_request(
-                    f'settings/{module_id}/{setting_ids}') as resp:
+                    f'settings/{module_id}') as resp:
                 await self._check_response(resp)
-                response = await resp.json()
-                return dict([(response[0]['id'], response[0]['value'])])
-        elif setting_ids is None or len(setting_ids) == 0:
-            async with self._session_request(f'settings/{module_id}') as resp:
+                data_response = await resp.json()
+                return {
+                    module_id: {data_response[0]['id']: data_response[0]['value']}
+                }
+
+        if isinstance(module_id, str) and isinstance(setting_id, str):
+            # get a single setting of a module
+            async with self._session_request(
+                    f'settings/{module_id}/{setting_id}') as resp:
                 await self._check_response(resp)
-                response = await resp.json()
-                return dict([(x['id'], x['value']) for x in response])
-        elif isinstance(setting_ids, Iterable):
-            ids = ",".join(setting_ids)
+                data_response = await resp.json()
+                return {
+                    module_id: {data_response[0]['id']: data_response[0]['value']}
+                }
+
+
+        if isinstance(module_id, str) and hasattr(setting_id, '__iter__'):
+            # get multiple settings of a module
+            ids = ",".join(setting_id)
             async with self._session_request(
                     f'settings/{module_id}/{ids}') as resp:
                 await self._check_response(resp)
-                response = await resp.json()
-                return dict([(x['id'], x['value']) for x in response])
-        else:
-            raise TypeError()
+                data_response = await resp.json()
+                return {
+                    module_id: {x['id']: x['value'] for x in data_response}
+                }
+
+
+        if isinstance(module_id, dict) and setting_id is None:
+            # get multiple process data of multiple modules
+            request = []
+            for mid, pids in module_id.items():
+                request.append(dict(moduleid=mid, settingids=pids))
+
+            async with self._session_request(f'settings',
+                                             method='POST',
+                                             json=request) as resp:
+                await self._check_response(resp)
+                data_response = await resp.json()
+                return {
+                    x['moduleid']: {y['id']: y['value'] for y in x['settings']} for x in data_response
+                }
+
+        raise TypeError('Invalid combination of module_id and setting_id.')
+
 
     @_relogin
     async def set_setting_values(self, module_id: str, values: Dict[str, str]):

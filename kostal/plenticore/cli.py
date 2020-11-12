@@ -3,6 +3,7 @@ from ast import literal_eval
 from collections import defaultdict
 from inspect import iscoroutinefunction
 import os
+from pprint import pprint
 import re
 import tempfile
 import traceback
@@ -125,26 +126,12 @@ class PlenticoreShell:
                         self.print_exception()
                         continue
 
-                    self.print_result(result)
+                    pprint(result)
 
             except KeyboardInterrupt:
                 continue
             except EOFError:
                 break
-
-    def print_result(self, result):
-        """Print the result of the method call."""
-        if isinstance(result, dict):
-            for k, v in result.items():
-                if hasattr(v, '__iter__') and not isinstance(v, str):
-                    print_formatted_text(f'{k}:')
-                    print_formatted_text(*v, sep='\n')
-                else:
-                    print_formatted_text(f'{k}: {v}')
-        elif hasattr(result, '__iter__') and not isinstance(result, str):
-            print_formatted_text(*result, sep='\n')
-        else:
-            print_formatted_text(result)
 
 
 async def repl_main(host, port, passwd):
@@ -312,14 +299,11 @@ def read_settings(global_args, ids):
 
             query[module_id].append(setting_id)
 
-        result = {}
-        for module_id, setting_ids in query.items():
-            values = await client.get_setting_values(module_id, setting_ids)
-            for setting_id, val in values.items():
-                result[f'{module_id}/{setting_id}'] = val
+        values = await client.get_setting_values(query)
 
-        for k, v in result.items():
-            print(f'{k}={v}')
+        for k, x in values.items():
+            for i, v in x.items():
+                print(f'{k}/{i}={v}')
 
     asyncio.run(
         command_main(global_args.host, global_args.port, global_args.passwd,
