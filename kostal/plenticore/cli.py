@@ -1,16 +1,18 @@
 import asyncio
-from ast import literal_eval
-from collections import defaultdict
-from inspect import iscoroutinefunction
 import os
 from pprint import pprint
 import re
 import tempfile
 import traceback
+from ast import literal_eval
+from collections import defaultdict
+from inspect import iscoroutinefunction
 from typing import Callable
+
+import click
 from aiohttp import ClientSession, ClientTimeout
 from prompt_toolkit import PromptSession, print_formatted_text
-import click
+
 from kostal.plenticore import PlenticoreApiClient
 
 
