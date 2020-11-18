@@ -130,6 +130,7 @@ class ProcessDataCollection(Mapping):
     """Represents a collection of process data value."""
     def __init__(self, raw):
         self._process_data = list([ProcessData(x) for x in raw])
+        self._raw = raw
 
     def __len__(self):
         return len(self._process_data)
