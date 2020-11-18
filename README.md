@@ -19,21 +19,25 @@ Provides a library and command line interface for the REST-API of Kostal Plentic
 
 ### Prerequisites
 
-You will need Python >=3.8.
+You will need Python >=3.7.
 
 ### Installing the library
 
-Download the latest Wheel Package (*.whl) from https://github.com/stegm/kostal_plenticore/releases/.
+Packages of this library are released on [PyPI](https://pypi.org/project/kostal-plenticore/) and can be 
+installed with `pip`. Alternatively the packages can also be downloaded from 
+[GitHub](https://github.com/stegm/kostal_plenticore/releases/).
 
-Install the library. I recommend to use a [virtual environment](https://docs.python.org/3/library/venv.html) for this, 
-because it installs the dependecies independently from the system.
+
+I recommend to use a [virtual environment](https://docs.python.org/3/library/venv.html) for this, 
+because it installs the dependecies independently from the system. The installed CLI tools can then be called
+without activating the virtual environment it.
 
 ```shell
 # Install with command line support
-$ pip install kostal_plenticore-<VERSION>-py3-none-any.whl[CLI]
+$ pip install kostal_plenticore[CLI]
 
 # Install without command line support
-$ pip install kostal_plenticore-<VERSION>-py3-none-any.whl
+$ pip install kostal_plenticore
 ```
 
 ### Using the command line interface
