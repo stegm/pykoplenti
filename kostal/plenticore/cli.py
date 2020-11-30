@@ -97,42 +97,57 @@ class PlenticoreShell:
                     method_name, *arg_values = text.strip().split()
 
                     if method_name == "help":
-                        if len(arg_values) == 0:
-                            print_formatted_text("Try: help <command>")
-                        else:
-                            method = getattr(self.client, arg_values[0])
-                            print_formatted_text(method.__doc__)
+                        self._do_help(arg_values)
                         continue
 
-                    try:
-                        method = getattr(self.client, method_name)
-                    except AttributeError:
-                        print_formatted_text(f"Unknown method: {method_name}")
+                    method = self._get_method(method_name)
+                    if method is None:
                         continue
 
-                    try:
-                        args = list([literal_eval(x) for x in arg_values])
-                    except Exception:
-                        print_formatted_text("Error parsing arguments")
-                        self.print_exception()
+                    args = self._create_args(arg_values)
+                    if args is None:
                         continue
 
-                    try:
-                        if iscoroutinefunction(method):
-                            result = await method(*args)
-                        else:
-                            result = method(*args)
-                    except Exception:
-                        print_formatted_text("Error executing method")
-                        self.print_exception()
-                        continue
-
-                    pprint(result)
+                    self._execute(method, args)
 
             except KeyboardInterrupt:
                 continue
             except EOFError:
                 break
+
+    def _do_help(self, argv):
+        if len(argv) == 0:
+            print_formatted_text("Try: help <command>")
+        else:
+            method = getattr(self.client, argv[0])
+            print_formatted_text(method.__doc__)
+
+    def _get_method(self, name):
+        try:
+            return getattr(self.client, name)
+        except AttributeError:
+            print_formatted_text(f"Unknown method: {name}")
+            return None
+
+    def _create_args(self, argv):
+        try:
+            return [literal_eval(x) for x in argv]
+        except Exception:
+            print_formatted_text("Error parsing arguments")
+            self.print_exception()
+            return None
+
+    def _execute(self, method, args):
+        try:
+            if iscoroutinefunction(method):
+                result = await method(*args)
+            else:
+                result = method(*args)
+
+            pprint(result)
+        except Exception:
+            print_formatted_text("Error executing method")
+            self.print_exception()
 
 
 async def repl_main(host, port, passwd):
