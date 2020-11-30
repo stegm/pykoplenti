@@ -2,6 +2,8 @@
 
 Provides a library and command line interface for the REST-API of Kostal Plenticore Solar Inverter.
 
+![CI](https://github.com/stegm/kostal_plenticore/workflows/CI/badge.svg)
+
 ## Features
 
 * Authenticate
