@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Minimum Python Version is now 3.7
 - Change package metadata
+### Added
+- new function to read events from the inverter
+- new sub-command `read-events` for reading events
 
 
 ## [0.2.0] - 2020-11-17

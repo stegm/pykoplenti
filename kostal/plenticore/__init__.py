@@ -1,10 +1,12 @@
 from base64 import b64decode, b64encode
 from collections.abc import Mapping
 import contextlib
+from datetime import datetime
 import functools
 import hashlib
 import hmac
 from json import dumps
+import locale
 import logging
 from os import urandom
 from typing import Dict, Iterable, Union
@@ -211,6 +213,65 @@ class SettingsData:
         return dumps(self._raw)
 
 
+class EventData:
+    """Represents a Plenticore event."""
+
+    def __init__(self, raw):
+        self._raw = raw
+
+    @property
+    def start_time(self) -> datetime:
+        ts = self._raw["start_time"]
+        # "2020-12-26T10:18:35.854Z"
+        return datetime.fromisoformat(ts)
+
+    @property
+    def end_time(self) -> datetime:
+        ts = self._raw["start_time"]
+        # "2020-12-26T10:18:35.854Z"
+        return datetime.fromisoformat(ts)
+
+    @property
+    def is_active(self) -> bool:
+        return self._raw["is_active"]
+
+    @property
+    def code(self) -> int:
+        return self._raw["code"]
+
+    @property
+    def long_description(self) -> str:
+        return self._raw["long_description"]
+
+    @property
+    def long_description(self) -> str:
+        return self._raw["long_description"]
+
+    @property
+    def category(self) -> str:
+        return self._raw["category"]
+
+    @property
+    def description(self) -> str:
+        return self._raw["description"]
+
+    @property
+    def group(self) -> str:
+        return self._raw["group"]
+
+    def __str__(self):
+        return (
+            f"EventData(start={self.start_time}, end={self.end_time}, "
+            f"code={self.code}, "
+            f"category={self.category()}, "
+            f"description={self.description}, "
+            f"group={self.group})"
+        )
+
+    def __repr__(self):
+        return dumps(self._raw)
+
+
 class PlenticoreApiException(Exception):
     """Base exception for Plenticore API calls."""
 
@@ -292,6 +353,20 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
     """
 
     BASE_URL = "/api/v1/"
+    SUPPORTED_LANGUAGES = {
+        "de": ["de"],
+        "en": ["gb"],
+        "es": ["es"],
+        "fr": ["fr"],
+        "hu": ["hu"],
+        "it": ["it"],
+        "nl": ["nl"],
+        "pl": ["pl"],
+        "pt": ["pt"],
+        "cs": ["cz"],
+        "el": ["gr"],
+        "zh": ["cn"],
+    }
 
     def __init__(self, websession: ClientSession, host: str, port: int = 80):
         """Create a new client.
@@ -521,6 +596,36 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
             await self._check_response(resp)
             response = await resp.json()
             return VersionData(response)
+
+    @_relogin
+    async def get_events(self, max_count=10, lang=None) -> Iterable[EventData]:
+        """Returns a list with the latest localized events.
+
+        :param max_count: the max number of events to read
+        :param lang: the RFC1766 based language code, for example 'de_CH' or 'en'
+        """
+        if lang is None:
+            lang = locale.getlocale()[0]
+
+        language = lang[0:2].lower()
+        variant = lang[3:5].lower()
+        if language not in PlenticoreApiClient.SUPPORTED_LANGUAGES.keys():
+            # Fallback to default
+            language = "en"
+            variant = "gb"
+        else:
+            variants = PlenticoreApiClient.SUPPORTED_LANGUAGES[language]
+            if variant not in variants:
+                variant = variants[0]
+
+        request = {"language": f"{language}-{variant}", "max": max_count}
+
+        async with self._session_request(
+            "events/latest", method="POST", json=request
+        ) as resp:
+            await self._check_response(resp)
+            event_response = await resp.json()
+            return [EventData(x) for x in event_response]
 
     async def get_modules(self) -> Iterable[ModuleData]:
         """Returns list of all available modules (providing process data or settings)."""

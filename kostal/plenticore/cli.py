@@ -108,7 +108,7 @@ class PlenticoreShell:
                     if args is None:
                         continue
 
-                    self._execute(method, args)
+                    await self._execute(method, args)
 
             except KeyboardInterrupt:
                 continue
@@ -137,7 +137,7 @@ class PlenticoreShell:
             self.print_exception()
             return None
 
-    def _execute(self, method, args):
+    async def _execute(self, method, args):
         try:
             if iscoroutinefunction(method):
                 result = await method(*args)
@@ -218,6 +218,25 @@ def cli(global_args, host, port, password, password_file):
 def repl(global_args):
     """Provides a simple REPL for executing API requests to plenticore inverters."""
     asyncio.run(repl_main(global_args.host, global_args.port, global_args.passwd))
+
+
+@cli.command()
+@click.option("--lang", default=None, help="language for events")
+@click.option("--count", default=10, help="number of events to read")
+@pass_global_args
+def read_events(global_args, lang, count):
+    """Returns the last events"""
+
+    async def fn(client: PlenticoreApiClient):
+        data = await client.get_events(lang=lang, max_count=count)
+        for event in data:
+            print(
+                f"{event.is_active<5} {event.start_time} {event.end_time} {event.description}"
+            )
+
+    asyncio.run(
+        command_main(global_args.host, global_args.port, global_args.passwd, fn)
+    )
 
 
 @cli.command()

@@ -9,13 +9,10 @@ Provides a library and command line interface for the REST-API of Kostal Plentic
 * Authenticate
 * Read/Write settings
 * Read process data
+* Read events
 * Full async-Support for reading and writing data
 * Commandline interface for shell access
 * Dynamic data model
-
-**Planned**
-* Read events
-
 
 ## Getting Started
 
