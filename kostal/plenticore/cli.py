@@ -240,6 +240,27 @@ def read_events(global_args, lang, count):
 
 
 @cli.command()
+@click.option(
+    "--out",
+    required=True,
+    type=click.File(mode="wt", encoding="UTF-8"),
+    help="file to write the log data to",
+)
+@click.option("--begin", type=click.DateTime(["%Y-%m-%d"]), help="first day to export")
+@click.option("--end", type=click.DateTime(["%Y-%m-%d"]), help="last day to export")
+@pass_global_args
+def download_log(global_args, out, begin, end):
+    """Download the log data from the inverter to a file."""
+
+    async def fn(client: PlenticoreApiClient):
+        data = await client.download_logdata(writer=out, begin=begin, end=end)
+
+    asyncio.run(
+        command_main(global_args.host, global_args.port, global_args.passwd, fn)
+    )
+
+
+@cli.command()
 @pass_global_args
 def all_processdata(global_args):
     """Returns a list of all available process data."""

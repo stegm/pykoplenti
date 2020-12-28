@@ -9,10 +9,10 @@ from json import dumps
 import locale
 import logging
 from os import urandom
-from typing import Dict, Iterable, Union
+from typing import IO, Dict, Iterable, Union
 
 from Crypto.Cipher import AES
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import ClientResponse, ClientSession, ClientTimeout
 from yarl import URL
 
 logger = logging.getLogger(__name__)
@@ -798,3 +798,24 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
             "settings", method="PUT", json=request
         ) as resp:
             await self._check_response(resp)
+
+    @_relogin
+    async def download_logdata(
+        self, writer: IO, begin: datetime = None, end: datetime = None
+    ):
+        """Download logdata as tab-separated file."""
+        request = {}
+        if begin is not None:
+            request["begin"] = begin.strftime("%Y-%m-%d")
+        if end is not None:
+            request["end"] = end.strftime("%Y-%m-%d")
+
+        async with self._session_request(
+            "logdata/download",
+            method="POST",
+            json=request,
+            timeout=ClientTimeout(total=360),
+        ) as resp:
+            await self._check_response(resp)
+            async for data in resp.content.iter_any():
+                writer.write(data.decode("UTF-8"))

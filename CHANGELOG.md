@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - new function to read events from the inverter
 - new sub-command `read-events` for reading events
+- download of log data
 
 
 ## [0.2.0] - 2020-11-17
