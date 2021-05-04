@@ -214,7 +214,7 @@ class SettingsData:
 
 
 class EventData:
-    """Represents a Plenticore event."""
+    """Represents an event of the inverter."""
 
     def __init__(self, raw):
         self._raw = raw
@@ -272,17 +272,17 @@ class EventData:
         return dumps(self._raw)
 
 
-class PlenticoreApiException(Exception):
-    """Base exception for Plenticore API calls."""
+class ApiException(Exception):
+    """Base exception for API calls."""
 
     def __init__(self, msg):
         self.msg = msg
 
     def __str__(self):
-        return f"Plenticore API Error: {self.msg}"
+        return f"API Error: {self.msg}"
 
 
-class PlenticoreInternalCommunicationException(PlenticoreApiException):
+class InternalCommunicationException(ApiException):
     """Exception for internal communication error response."""
 
     def __init__(self, status_code: int, error: str):
@@ -291,8 +291,8 @@ class PlenticoreInternalCommunicationException(PlenticoreApiException):
         self.error = error
 
 
-class PlenticoreAuthenticationException(PlenticoreApiException):
-    """Exception for authentiation or user error response."""
+class AuthenticationException(ApiException):
+    """Exception for authentication or user error response."""
 
     def __init__(self, status_code: int, error: str):
         super().__init__(
@@ -302,7 +302,7 @@ class PlenticoreAuthenticationException(PlenticoreApiException):
         self.error = error
 
 
-class PlenticoreUserLockedException(PlenticoreApiException):
+class UserLockedException(ApiException):
     """Exception for user locked error response."""
 
     def __init__(self, status_code: int, error: str):
@@ -311,7 +311,7 @@ class PlenticoreUserLockedException(PlenticoreApiException):
         self.error = error
 
 
-class PlenticoreModuleNotFoundException(PlenticoreApiException):
+class ModuleNotFoundException(ApiException):
     """Exception for module or setting not found response."""
 
     def __init__(self, status_code: int, error: str):
@@ -320,7 +320,7 @@ class PlenticoreModuleNotFoundException(PlenticoreApiException):
         self.error = error
 
 
-class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
+class ApiClient(contextlib.AbstractAsyncContextManager):
     """Client for the REST-API of Kostal Plenticore inverters.
 
     The RESP-API provides several scopes of information. Each scope provides a
@@ -372,7 +372,7 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
         """Create a new client.
 
         :param websession: A aiohttp ClientSession for all requests
-        :param host: The hostname or ip of the plenticore inverter
+        :param host: The hostname or ip of the inverter
         :param port: The port of the API interface (default 80)
         """
         self.websession = websession
@@ -397,7 +397,7 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
             scheme="http",
             host=self.host,
             port=self.port,
-            path=PlenticoreApiClient.BASE_URL,
+            path=ApiClient.BASE_URL,
         )
         return base.join(URL(path))
 
@@ -405,7 +405,7 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
         """Login the given user (default is 'user') with the given
         password.
 
-        :raises PlenticoreAuthenticationException: if authentication failed
+        :raises AuthenticationException: if authentication failed
         :raises aiohttp.client_exceptions.ClientConnectorError: if host is not reachable
         :raises asyncio.exceptions.TimeoutError: if a timeout occurs
         """
@@ -539,19 +539,19 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
                 error = None
 
             if resp.status == 400:
-                raise PlenticoreAuthenticationException(resp.status, error)
+                raise AuthenticationException(resp.status, error)
 
             if resp.status == 403:
-                raise PlenticoreUserLockedException(resp.status, error)
+                raise UserLockedException(resp.status, error)
 
             if resp.status == 404:
-                raise PlenticoreModuleNotFoundException(resp.status, error)
+                raise ModuleNotFoundException(resp.status, error)
 
             if resp.status == 503:
-                raise PlenticoreInternalCommunicationException(resp.status, error)
+                raise InternalCommunicationException(resp.status, error)
 
             # we got an undocumented status code
-            raise PlenticoreApiException(
+            raise ApiException(
                 f"Unknown API response [{resp.status}] - {error}"
             )
 
@@ -562,7 +562,7 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
         async def _wrapper(self, *args, **kwargs):
             try:
                 return await fn(self, *args, **kwargs)
-            except PlenticoreAuthenticationException:
+            except AuthenticationException:
                 pass
 
             logger.debug("Request failed - try to re-login")
@@ -609,12 +609,12 @@ class PlenticoreApiClient(contextlib.AbstractAsyncContextManager):
 
         language = lang[0:2].lower()
         variant = lang[3:5].lower()
-        if language not in PlenticoreApiClient.SUPPORTED_LANGUAGES.keys():
+        if language not in ApiClient.SUPPORTED_LANGUAGES.keys():
             # Fallback to default
             language = "en"
             variant = "gb"
         else:
-            variants = PlenticoreApiClient.SUPPORTED_LANGUAGES[language]
+            variants = ApiClient.SUPPORTED_LANGUAGES[language]
             if variant not in variants:
                 variant = variants[0]
 

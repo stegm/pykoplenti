@@ -104,7 +104,7 @@ $ pykoplenti --host 192.168.1.100 --password verysecret write-settings devices:l
 
 ### REPL
 
-A REPL is provided for simple interactive tests. All methods of the `PlenticoreApiClient` class can be called. The 
+A REPL is provided for simple interactive tests. All methods of the `ApiClient` class can be called. The 
 arguments must be given separated by spaces by using python literals. 
 
 ```shell script

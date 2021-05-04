@@ -1,6 +1,6 @@
 import asyncio
 from aiohttp import ClientSession
-from kostal.plenticore import PlenticoreApiClient
+from pykoplenti import ApiClient
 import sys
 
 """
@@ -13,7 +13,7 @@ Must be called with host and password:
 
 async def async_main(host, passwd):
     async with ClientSession() as session:
-        client = PlenticoreApiClient(session, host)
+        client = ApiClient(session, host)
         await client.login(passwd)
 
         data = await client.get_process_data_values('devices:local', ['Inverter:State', 'Home_P'])

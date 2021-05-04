@@ -36,10 +36,10 @@ without activating the virtual environment it.
 
 ```shell
 # Install with command line support
-$ pip install kostal_plenticore[CLI]
+$ pip install pykoplenti[CLI]
 
 # Install without command line support
-$ pip install kostal_plenticore
+$ pip install pykoplenti
 ```
 
 ### Using the command line interface
@@ -54,8 +54,8 @@ Usage: pykoplenti [OPTIONS] COMMAND [ARGS]...
   Handling of global arguments with click
 
 Options:
-  --host TEXT           hostname or ip of plenticore inverter
-  --port INTEGER        port of plenticore inverter (default 80)
+  --host TEXT           hostname or ip of the inverter
+  --port INTEGER        port of the inverter (default 80)
   --password TEXT       the password
   --password-file TEXT  password file (default "secrets" in the current
                         working directory)
@@ -81,14 +81,14 @@ example directory for full code.
 Import the client module:
 
 ```python
-from kostal.plenticore import PlenticoreApiClient
+from pykoplenti import ApiClient
 ```
 
 To communicate with the inverter you need to instantiate the client:
  
 ```python
 # session is a aiohttp ClientSession
-client = PlenticoreApiClient(session, '192.168.1.100')
+client = ApiClient(session, '192.168.1.100')
 ```
 
 Login to gain full access to process data and settings:

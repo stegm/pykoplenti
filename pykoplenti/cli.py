@@ -13,7 +13,7 @@ from aiohttp import ClientSession, ClientTimeout
 import click
 from prompt_toolkit import PromptSession, print_formatted_text
 
-from kostal.plenticore import PlenticoreApiClient
+from pykoplenti import ApiClient
 
 
 class SessionCache:
@@ -23,7 +23,7 @@ class SessionCache:
         self.host = host
 
     def read_session_id(self) -> str:
-        file = os.path.join(tempfile.gettempdir(), f"plenticore-session-{self.host}")
+        file = os.path.join(tempfile.gettempdir(), f"pykoplenti-session-{self.host}")
         if os.path.isfile(file):
             with open(file, "rt") as f:
                 return f.readline(256)
@@ -31,7 +31,7 @@ class SessionCache:
             return None
 
     def write_session_id(self, id: str):
-        file = os.path.join(tempfile.gettempdir(), f"plenticore-session-{self.host}")
+        file = os.path.join(tempfile.gettempdir(), f"pykoplenti-session-{self.host}")
         f = os.open(file, os.O_WRONLY | os.O_TRUNC | os.O_CREAT, mode=0o600)
         try:
             os.write(f, id.encode("ascii"))
@@ -39,10 +39,10 @@ class SessionCache:
             os.close(f)
 
 
-class PlenticoreShell:
-    """Provides a shell-like access to the plenticore client."""
+class ApiShell:
+    """Provides a shell-like access to the inverter."""
 
-    def __init__(self, client: PlenticoreApiClient):
+    def __init__(self, client: ApiClient):
         super().__init__()
         self.client = client
         self._session_cache = SessionCache(self.client.host)
@@ -152,17 +152,17 @@ class PlenticoreShell:
 
 async def repl_main(host, port, passwd):
     async with ClientSession(timeout=ClientTimeout(total=10)) as session:
-        client = PlenticoreApiClient(session, host=host, port=port)
+        client = ApiClient(session, host=host, port=port)
 
-        shell = PlenticoreShell(client)
+        shell = ApiShell(client)
         await shell.run(passwd)
 
 
 async def command_main(
-        host: str, port: int, passwd: str, fn: Callable[[PlenticoreApiClient], None]
+    host: str, port: int, passwd: str, fn: Callable[[ApiClient], None]
 ):
     async with ClientSession(timeout=ClientTimeout(total=10)) as session:
-        client = PlenticoreApiClient(session, host=host, port=port)
+        client = ApiClient(session, host=host, port=port)
         session_cache = SessionCache(host)
 
         # Try to reuse an existing session
@@ -190,8 +190,8 @@ pass_global_args = click.make_pass_decorator(GlobalArgs, ensure=True)
 
 
 @click.group()
-@click.option("--host", help="hostname or ip of plenticore inverter")
-@click.option("--port", default=80, help="port of plenticore (default 80)")
+@click.option("--host", help="hostname or ip of the inverter")
+@click.option("--port", default=80, help="port of the inverter (default 80)")
 @click.option("--password", default=None, help="the password")
 @click.option(
     "--password-file",
@@ -216,7 +216,7 @@ def cli(global_args, host, port, password, password_file):
 @cli.command()
 @pass_global_args
 def repl(global_args):
-    """Provides a simple REPL for executing API requests to plenticore inverters."""
+    """Provides a simple REPL for executing API requests to the inverter."""
     asyncio.run(repl_main(global_args.host, global_args.port, global_args.passwd))
 
 
@@ -227,7 +227,7 @@ def repl(global_args):
 def read_events(global_args, lang, count):
     """Returns the last events"""
 
-    async def fn(client: PlenticoreApiClient):
+    async def fn(client: ApiClient):
         data = await client.get_events(lang=lang, max_count=count)
         for event in data:
             print(
@@ -252,7 +252,7 @@ def read_events(global_args, lang, count):
 def download_log(global_args, out, begin, end):
     """Download the log data from the inverter to a file."""
 
-    async def fn(client: PlenticoreApiClient):
+    async def fn(client: ApiClient):
         data = await client.download_logdata(writer=out, begin=begin, end=end)
 
     asyncio.run(
@@ -265,7 +265,7 @@ def download_log(global_args, out, begin, end):
 def all_processdata(global_args):
     """Returns a list of all available process data."""
 
-    async def fn(client: PlenticoreApiClient):
+    async def fn(client: ApiClient):
         data = await client.get_process_data()
         for k, v in data.items():
             for x in v:
@@ -290,7 +290,7 @@ def read_processdata(global_args, ids):
         read-processdata devices:local/Inverter:State
     """
 
-    async def fn(client: PlenticoreApiClient):
+    async def fn(client: ApiClient):
         if len(ids) == 1 and "/" not in ids[0]:
             # all process data ids of a moudle
             values = await client.get_process_data_values(ids[0])
@@ -325,7 +325,7 @@ def read_processdata(global_args, ids):
 def all_settings(global_args, rw):
     """Returns the ids of all settings."""
 
-    async def fn(client: PlenticoreApiClient):
+    async def fn(client: ApiClient):
         settings = await client.get_settings()
         for k, v in settings.items():
             for x in v:
@@ -351,7 +351,7 @@ def read_settings(global_args, ids):
         read-settings devices:local/Battery:MinSoc devices:local/Battery:MinHomeComsumption
     """
 
-    async def fn(client: PlenticoreApiClient):
+    async def fn(client: ApiClient):
         query = defaultdict(list)
         for id in ids:
             m = re.match(r"(?P<module_id>.+)/(?P<setting_id>.+)", id)
@@ -387,7 +387,7 @@ def write_settings(global_args, id_values):
         write-settings devices:local/Battery:MinSoc=15
     """
 
-    async def fn(client: PlenticoreApiClient):
+    async def fn(client: ApiClient):
         query = defaultdict(dict)
         for id_value in id_values:
             m = re.match(

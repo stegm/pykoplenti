@@ -3,8 +3,8 @@
 ## Code Format
 
 ```shell script
-isort kostal
-black --fast kostal
+isort pykoplenti
+black --fast pykoplenti
 ```
 
 ## Install Package editable
