@@ -1,6 +1,8 @@
-# Kostal Plenticore Python Library
+# Python Library for Accessing Kostal Plenticore Inverters
 
-Provides a library and command line interface for the REST-API of Kostal Plenticore Solar Inverter.
+This repository provides a python library and command line interface for the REST-API of Kostal Plenticore Solar Inverter.
+
+This library is not affiliated with Kostal and is no offical product. It uses the interfaces of the inverter like other libs (eg. https://github.com/kilianknoll/kostal-RESTAPI) and uses information from their swagger documentation (<ip>/api/v1/).
 
 ![CI](https://github.com/stegm/kostal_plenticore/workflows/CI/badge.svg)
 
@@ -123,5 +125,7 @@ See the full example here: [read_process_data.py](examples/read_process_data.py)
 apache-2.0
 
 ## Acknowledgments
+
+
 
 * [kilianknoll](https://github.com/kilianknoll) for the kostal-RESTAPI project 
