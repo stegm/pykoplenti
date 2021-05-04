@@ -4,7 +4,7 @@ This repository provides a python library and command line interface for the RES
 
 This library is not affiliated with Kostal and is no offical product. It uses the interfaces of the inverter like other libs (eg. https://github.com/kilianknoll/kostal-RESTAPI) and uses information from their swagger documentation (ip-addr/api/v1/).
 
-![CI](https://github.com/stegm/pyclient_koplenti/workflows/CI/badge.svg)
+![CI](https://github.com/stegm/pykoplenti/workflows/CI/badge.svg)
 
 ## Features
 
@@ -27,7 +27,7 @@ You will need Python >=3.7.
 
 Packages of this library are released on [PyPI](https://pypi.org/project/kostal-plenticore/) and can be 
 installed with `pip`. Alternatively the packages can also be downloaded from 
-[GitHub](https://github.com/stegm/pyclient_koplenti/releases/).
+[GitHub](https://github.com/stegm/pykoplenti/releases/).
 
 
 I recommend to use a [virtual environment](https://docs.python.org/3/library/venv.html) for this, 
