@@ -85,7 +85,7 @@ class PlenticoreShell:
 
         while True:
             try:
-                text = await session.prompt_async("(plenticore)> ")
+                text = await session.prompt_async("(pykoplenti)> ")
 
                 if text.strip().lower() == "exit":
                     raise EOFError()
@@ -159,7 +159,7 @@ async def repl_main(host, port, passwd):
 
 
 async def command_main(
-    host: str, port: int, passwd: str, fn: Callable[[PlenticoreApiClient], None]
+        host: str, port: int, passwd: str, fn: Callable[[PlenticoreApiClient], None]
 ):
     async with ClientSession(timeout=ClientTimeout(total=10)) as session:
         client = PlenticoreApiClient(session, host=host, port=port)
@@ -231,7 +231,7 @@ def read_events(global_args, lang, count):
         data = await client.get_events(lang=lang, max_count=count)
         for event in data:
             print(
-                f"{event.is_active<5} {event.start_time} {event.end_time} {event.description}"
+                f"{event.is_active < 5} {event.start_time} {event.end_time} {event.description}"
             )
 
     asyncio.run(

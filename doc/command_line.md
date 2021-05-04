@@ -9,7 +9,7 @@ After the first login a session id is created and saved in a temporary file. If 
 ### Display all available process data id's
 
 ```shell script
-$ plenticore --host 192.168.1.100 --password verysecret all-processdata
+$ pykoplenti --host 192.168.1.100 --password verysecret all-processdata
 devices:local/Dc_P
 devices:local/DigitalIn
 devices:local/EM_State
@@ -28,14 +28,14 @@ The returned ids can be used to query process data values.
 **Read a single value**
 
 ```shell script
-$ plenticore --host 192.168.1.100 --password verysecret read-processdata devices:local/Inverter:State
+$ pykoplenti --host 192.168.1.100 --password verysecret read-processdata devices:local/Inverter:State
 devices:local/Inverter:State=6.0
 ```
 
 **Read multiple values (even on different modules)**
 
 ```shell script
-$ plenticore --host 192.168.1.100 --password verysecret read-processdata devices:local/Inverter:State devices:local/EM_State devices:local:pv1/U
+$ pykoplenti --host 192.168.1.100 --password verysecret read-processdata devices:local/Inverter:State devices:local/EM_State devices:local:pv1/U
 devices:local/EM_State=0.0
 devices:local/Inverter:State=6.0
 devices:local:pv1/U=11.0961999893
@@ -46,7 +46,7 @@ This is the most efficient way because all process data are fetched with a singl
 **Read all values off a module**
 
 ```shell script
-$ plenticore --host 192.168.1.100 --password verysecret read-processdata devices:local:pv1
+$ pykoplenti --host 192.168.1.100 --password verysecret read-processdata devices:local:pv1
 devices:local:pv1/I=0.0058542006
 devices:local:pv1/P=-0.11253988
 devices:local:pv1/U=10.9401073456
@@ -57,7 +57,7 @@ devices:local:pv1/U=10.9401073456
 **Display all setting id's**
 
 ```shell script
-$ plenticore --host 192.168.1.100 --password verysecret all-settings
+$ pykoplenti --host 192.168.1.100 --password verysecret all-settings
 devices:local/ActivePower:ExtCtrl:Enable
 devices:local/ActivePower:ExtCtrl:ModeGradientEnable
 devices:local/ActivePower:ExtCtrl:ModeGradientFactor
@@ -70,7 +70,7 @@ scb:time/Timezone
 **Display only writable setting id's**
 
 ```shell script
-$ plenticore --host 192.168.1.100 --password verysecret all-settings --rw
+$ pykoplenti --host 192.168.1.100 --password verysecret all-settings --rw
 devices:local/Battery:BackupMode:Enable
 devices:local/Battery:DynamicSoc:Enable
 devices:local/Battery:MinHomeComsumption
@@ -85,13 +85,13 @@ scb:time/Timezone
 **Read a single setting value**
 
 ```shell script
-$ plenticore --host 192.168.1.100 --password verysecret read-settings scb:time/Timezone
+$ pykoplenti --host 192.168.1.100 --password verysecret read-settings scb:time/Timezone
 scb:time/Timezone=Europe/Berlin
 ```
 
 **Read multiple setting values**
 ```shell script
-$ plenticore --host 192.168.1.100 --password verysecret read-settings scb:time/Timezone scb:network/Hostname
+$ pykoplenti --host 192.168.1.100 --password verysecret read-settings scb:time/Timezone scb:network/Hostname
 scb:time/Timezone=Europe/Berlin
 scb:network/Hostname=scb
 ```
@@ -99,7 +99,7 @@ scb:network/Hostname=scb
 ### Writing setting values
 
 ```shell script
-$ plenticore --host 192.168.1.100 --password verysecret write-settings devices:local/Battery:MinSoc=10
+$ pykoplenti --host 192.168.1.100 --password verysecret write-settings devices:local/Battery:MinSoc=10
 ```
 
 ### REPL
@@ -108,10 +108,10 @@ A REPL is provided for simple interactive tests. All methods of the `PlenticoreA
 arguments must be given separated by spaces by using python literals. 
 
 ```shell script
-$ plenticore --host 192.168.1.100 repl
-(plenticore)> get_me
+$ pykoplenti --host 192.168.1.100 repl
+(pykoplenti)> get_me
 Me(locked=False, active=False, authenticated=False, permissions=[] anonymous=True role=NONE)
-(plenticore)> get_process_data_values "devices:local" "Inverter:State"
+(pykoplenti)> get_process_data_values "devices:local" "Inverter:State"
 devices:local:
 ProcessData(id=Inverter:State, unit=, value=6.0)
 ```

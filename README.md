@@ -2,9 +2,9 @@
 
 This repository provides a python library and command line interface for the REST-API of Kostal Plenticore Solar Inverter.
 
-This library is not affiliated with Kostal and is no offical product. It uses the interfaces of the inverter like other libs (eg. https://github.com/kilianknoll/kostal-RESTAPI) and uses information from their swagger documentation (<ip>/api/v1/).
+This library is not affiliated with Kostal and is no offical product. It uses the interfaces of the inverter like other libs (eg. https://github.com/kilianknoll/kostal-RESTAPI) and uses information from their swagger documentation (ip-addr/api/v1/).
 
-![CI](https://github.com/stegm/kostal_plenticore/workflows/CI/badge.svg)
+![CI](https://github.com/stegm/pyclient_koplenti/workflows/CI/badge.svg)
 
 ## Features
 
@@ -27,7 +27,7 @@ You will need Python >=3.7.
 
 Packages of this library are released on [PyPI](https://pypi.org/project/kostal-plenticore/) and can be 
 installed with `pip`. Alternatively the packages can also be downloaded from 
-[GitHub](https://github.com/stegm/kostal_plenticore/releases/).
+[GitHub](https://github.com/stegm/pyclient_koplenti/releases/).
 
 
 I recommend to use a [virtual environment](https://docs.python.org/3/library/venv.html) for this, 
@@ -48,14 +48,14 @@ $ pip install kostal_plenticore
 Installing the libray with `CLI` provides a new command.
 
 ```shell
-$ plenticore --help
-Usage: plenticore [OPTIONS] COMMAND [ARGS]...
+$ pykoplenti --help
+Usage: pykoplenti [OPTIONS] COMMAND [ARGS]...
 
   Handling of global arguments with click
 
 Options:
   --host TEXT           hostname or ip of plenticore inverter
-  --port INTEGER        port of plenticore (default 80)
+  --port INTEGER        port of plenticore inverter (default 80)
   --password TEXT       the password
   --password-file TEXT  password file (default "secrets" in the current
                         working directory)
