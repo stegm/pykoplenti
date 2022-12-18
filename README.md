@@ -21,7 +21,7 @@ This library is not affiliated with Kostal and is no offical product. It uses th
 
 ### Prerequisites
 
-You will need Python >=3.7.py
+You will need Python >=3.7.
 
 ### Installing the library
 

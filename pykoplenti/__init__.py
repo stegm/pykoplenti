@@ -405,7 +405,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
     async def login(self,
                     key: str,
                     service_code: Union[str, None] = None):
-        """Login with the given password (key). If not service code is provided, user is 'user'.
+        """Login with the given password (key). If a service code is provided user is 'master', else 'user'.
 
         Parameters
         ----------
