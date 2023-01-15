@@ -10,6 +10,7 @@ import locale
 import logging
 from os import urandom
 from typing import IO, Dict, Iterable, Union
+import warnings
 
 from Crypto.Cipher import AES
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
@@ -404,7 +405,9 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
     async def login(self,
                     key: str,
-                    service_code: Union[str, None] = None):
+                    service_code: Union[str, None] = None,
+                    password: Union[str, None] = None,
+                    user: Union[str, None] = None):
         """Login with the given password (key). If a service code is provided user is 'master', else 'user'.
 
         Parameters
@@ -413,15 +416,27 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         :type key: str, None
         :param service_code: Installer service code. If given the user is assumed to be 'master', else 'user'.
         :type service_code: str, None
+        :param password: Deprecated, use key instead.
+        :param user: Deprecated, user is chosen automatically depending on service_code.
 
         :raises AuthenticationException: if authentication failed
         :raises aiohttp.client_exceptions.ClientConnectorError: if host is not reachable
         :raises asyncio.exceptions.TimeoutError: if a timeout occurs
         """
 
-        self._key = key
-        self._user = 'master' if service_code else 'user'
+        if password is None:
+            self._key = key
+        else:
+            warnings.warn("password is deprecated. Use key instead.", DeprecationWarning)
+            self._key = password
+        
+        if user is None:
+            self._user = 'master' if service_code else 'user'
+        else:
+            warnings.warn("user is deprecated. user is chosen automatically.", DeprecationWarning)
+
         self._service_code = service_code
+
         try:
             await self._login()
         except Exception:
