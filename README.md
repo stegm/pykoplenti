@@ -109,6 +109,13 @@ home_p = device_local['Home_P']
 
 See the full example here: [read_process_data.py](examples/read_process_data.py).
 
+If you should need installer access use the master key (printed on a label at the side of the inverter) 
+and additionally pass your service code:
+
+```python
+await client.login(my_master_key, service_code=my_service_code)
+```
+
 
 ## Documentation
 
@@ -129,3 +136,4 @@ apache-2.0
 
 
 * [kilianknoll](https://github.com/kilianknoll) for the kostal-RESTAPI project 
+ 

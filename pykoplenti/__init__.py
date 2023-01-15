@@ -10,6 +10,7 @@ import locale
 import logging
 from os import urandom
 from typing import IO, Dict, Iterable, Union
+import warnings
 
 from Crypto.Cipher import AES
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
@@ -379,7 +380,8 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         self.host = host
         self.port = port
         self.session_id = None
-        self._password = None
+        self._key = None
+        self._service_code = None
         self._user = None
 
     async def __aexit__(self, exc_type, exc_value, traceback):
@@ -401,22 +403,46 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         )
         return base.join(URL(path))
 
-    async def login(self, password: str, user: str = "user"):
-        """Login the given user (default is 'user') with the given
-        password.
+    async def login(self,
+                    key: str,
+                    service_code: Union[str, None] = None,
+                    password: Union[str, None] = None,
+                    user: Union[str, None] = None):
+        """Login with the given password (key). If a service code is provided user is 'master', else 'user'.
+
+        Parameters
+        ----------
+        :param key: The user password. If 'service_code' is given, 'key' is the Master Key (also called Device ID).
+        :type key: str, None
+        :param service_code: Installer service code. If given the user is assumed to be 'master', else 'user'.
+        :type service_code: str, None
+        :param password: Deprecated, use key instead.
+        :param user: Deprecated, user is chosen automatically depending on service_code.
 
         :raises AuthenticationException: if authentication failed
         :raises aiohttp.client_exceptions.ClientConnectorError: if host is not reachable
         :raises asyncio.exceptions.TimeoutError: if a timeout occurs
         """
 
-        self._password = password
-        self._user = user
+        if password is None:
+            self._key = key
+        else:
+            warnings.warn("password is deprecated. Use key instead.", DeprecationWarning)
+            self._key = password
+        
+        if user is None:
+            self._user = 'master' if service_code else 'user'
+        else:
+            warnings.warn("user is deprecated. user is chosen automatically.", DeprecationWarning)
+
+        self._service_code = service_code
+
         try:
             await self._login()
         except Exception:
-            self._password = None
+            self._key = None
             self._user = None
+            self._service_code = None
             raise
 
     async def _login(self):
@@ -440,7 +466,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
         # Step 2 finish authentication (RFC5802)
         salted_passwd = hashlib.pbkdf2_hmac(
-            "sha256", self._password.encode("utf-8"), salt, rounds
+            "sha256", self._key.encode("utf-8"), salt, rounds
         )
         client_key = hmac.new(
             salted_passwd, "Client Key".encode("utf-8"), hashlib.sha256
@@ -490,6 +516,10 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         protocol_key = session_key_hmac.digest()
         session_nonce = urandom(16)
         cipher = AES.new(protocol_key, AES.MODE_GCM, nonce=session_nonce)
+
+        if self._user == 'master':
+            token = f"{token}:{self._service_code}"
+
         cipher_text, auth_tag = cipher.encrypt_and_digest(token.encode("utf-8"))
 
         session_request = {
@@ -573,7 +603,8 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
     async def logout(self):
         """Logs the current user out."""
-        self._password = None
+        self._key = None
+        self._service_code = None
         async with self._session_request("auth/logout", method="POST") as resp:
             await self._check_response(resp)
 
