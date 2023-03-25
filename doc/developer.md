@@ -7,8 +7,8 @@ isort pykoplenti
 black --fast pykoplenti
 ```
 
-## Install Package editable
+## Initialize developer environment with pipenv
 
 ```shell script
-pip install -e .[CLI]
+pipenv sync
 ```

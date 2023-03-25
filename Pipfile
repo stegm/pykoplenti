@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pykoplenti = {editable = true, extras = ["cli"], path = "."}
+
+[dev-packages]
+black = "~=23.1"
+isort = "~=5.12"
+ruff = "*"
+pytest = "*"
+
+[requires]
+python_version = "3.10"

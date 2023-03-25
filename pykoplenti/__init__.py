@@ -403,11 +403,13 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         )
         return base.join(URL(path))
 
-    async def login(self,
-                    key: str,
-                    service_code: Union[str, None] = None,
-                    password: Union[str, None] = None,
-                    user: Union[str, None] = None):
+    async def login(
+        self,
+        key: str,
+        service_code: Union[str, None] = None,
+        password: Union[str, None] = None,
+        user: Union[str, None] = None,
+    ):
         """Login with the given password (key). If a service code is provided user is 'master', else 'user'.
 
         Parameters
@@ -427,13 +429,17 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         if password is None:
             self._key = key
         else:
-            warnings.warn("password is deprecated. Use key instead.", DeprecationWarning)
+            warnings.warn(
+                "password is deprecated. Use key instead.", DeprecationWarning
+            )
             self._key = password
-        
+
         if user is None:
-            self._user = 'master' if service_code else 'user'
+            self._user = "master" if service_code else "user"
         else:
-            warnings.warn("user is deprecated. user is chosen automatically.", DeprecationWarning)
+            warnings.warn(
+                "user is deprecated. user is chosen automatically.", DeprecationWarning
+            )
 
         self._service_code = service_code
 
@@ -517,7 +523,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         session_nonce = urandom(16)
         cipher = AES.new(protocol_key, AES.MODE_GCM, nonce=session_nonce)
 
-        if self._user == 'master':
+        if self._user == "master":
             token = f"{token}:{self._service_code}"
 
         cipher_text, auth_tag = cipher.encrypt_and_digest(token.encode("utf-8"))
@@ -581,9 +587,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 raise InternalCommunicationException(resp.status, error)
 
             # we got an undocumented status code
-            raise ApiException(
-                f"Unknown API response [{resp.status}] - {error}"
-            )
+            raise ApiException(f"Unknown API response [{resp.status}] - {error}")
 
     def _relogin(fn):
         """Decorator for automatic re-login if session was expired."""
