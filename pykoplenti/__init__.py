@@ -54,8 +54,8 @@ class MeData:
             f"Me(locked={self.is_locked}, "
             f"active={self.is_active}, "
             f"authenticated={self.is_authenticated}, "
-            f"permissions={str(self.permissions)},"
-            f" anonymous={self.is_anonymous}, "
+            f"permissions={str(self.permissions)}, "
+            f"anonymous={self.is_anonymous}, "
             f"role={self.role})"
         )
 

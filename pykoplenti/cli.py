@@ -414,4 +414,4 @@ def write_settings(global_args, id_values):
 if __name__ == "__main__":
     import sys
 
-    cli(sys.argv[1:])
+    cli(sys.argv[1:], auto_envvar_prefix="PYKOPLENTI")
