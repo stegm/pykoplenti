@@ -228,7 +228,7 @@ class EventData:
 
     @property
     def end_time(self) -> datetime:
-        ts = self._raw["start_time"]
+        ts = self._raw["end_time"]
         # "2020-12-26T10:18:35.854Z"
         return datetime.fromisoformat(ts)
 
@@ -239,10 +239,6 @@ class EventData:
     @property
     def code(self) -> int:
         return self._raw["code"]
-
-    @property
-    def long_description(self) -> str:
-        return self._raw["long_description"]
 
     @property
     def long_description(self) -> str:
