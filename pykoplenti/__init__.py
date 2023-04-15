@@ -54,8 +54,8 @@ class MeData:
             f"Me(locked={self.is_locked}, "
             f"active={self.is_active}, "
             f"authenticated={self.is_authenticated}, "
-            f"permissions={str(self.permissions)},"
-            f" anonymous={self.is_anonymous}, "
+            f"permissions={str(self.permissions)}, "
+            f"anonymous={self.is_anonymous}, "
             f"role={self.role})"
         )
 
@@ -228,7 +228,7 @@ class EventData:
 
     @property
     def end_time(self) -> datetime:
-        ts = self._raw["start_time"]
+        ts = self._raw["end_time"]
         # "2020-12-26T10:18:35.854Z"
         return datetime.fromisoformat(ts)
 
@@ -239,10 +239,6 @@ class EventData:
     @property
     def code(self) -> int:
         return self._raw["code"]
-
-    @property
-    def long_description(self) -> str:
-        return self._raw["long_description"]
 
     @property
     def long_description(self) -> str:
@@ -299,6 +295,15 @@ class AuthenticationException(ApiException):
         super().__init__(
             f"Invalid user/Authentication failed ([{status_code}] - {error})"
         )
+        self.status_code = status_code
+        self.error = error
+
+
+class NotAuthorizedException(ApiException):
+    """Exception for calles without authentication."""
+
+    def __init__(self, status_code: int, error: str):
+        super().__init__(f"Not authorized ([{status_code}] - {error})")
         self.status_code = status_code
         self.error = error
 
@@ -403,18 +408,24 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         )
         return base.join(URL(path))
 
-    async def login(self,
-                    key: str,
-                    service_code: Union[str, None] = None,
-                    password: Union[str, None] = None,
-                    user: Union[str, None] = None):
-        """Login with the given password (key). If a service code is provided user is 'master', else 'user'.
+    async def login(
+        self,
+        key: str,
+        service_code: Union[str, None] = None,
+        password: Union[str, None] = None,
+        user: Union[str, None] = None,
+    ):
+        """Login with the given password (key).
+
+        If a service code is provided user is 'master', else 'user'.
 
         Parameters
         ----------
-        :param key: The user password. If 'service_code' is given, 'key' is the Master Key (also called Device ID).
+        :param key: The user password. If 'service_code' is given, 'key' is the
+                    Master Key (also called Device ID).
         :type key: str, None
-        :param service_code: Installer service code. If given the user is assumed to be 'master', else 'user'.
+        :param service_code: Installer service code. If given the user is assumed to be
+                             'master', else 'user'.
         :type service_code: str, None
         :param password: Deprecated, use key instead.
         :param user: Deprecated, user is chosen automatically depending on service_code.
@@ -427,13 +438,17 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         if password is None:
             self._key = key
         else:
-            warnings.warn("password is deprecated. Use key instead.", DeprecationWarning)
+            warnings.warn(
+                "password is deprecated. Use key instead.", DeprecationWarning
+            )
             self._key = password
-        
+
         if user is None:
-            self._user = 'master' if service_code else 'user'
+            self._user = "master" if service_code else "user"
         else:
-            warnings.warn("user is deprecated. user is chosen automatically.", DeprecationWarning)
+            warnings.warn(
+                "user is deprecated. user is chosen automatically.", DeprecationWarning
+            )
 
         self._service_code = service_code
 
@@ -517,7 +532,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         session_nonce = urandom(16)
         cipher = AES.new(protocol_key, AES.MODE_GCM, nonce=session_nonce)
 
-        if self._user == 'master':
+        if self._user == "master":
             token = f"{token}:{self._service_code}"
 
         cipher_text, auth_tag = cipher.encrypt_and_digest(token.encode("utf-8"))
@@ -571,6 +586,9 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             if resp.status == 400:
                 raise AuthenticationException(resp.status, error)
 
+            if resp.status == 401:
+                raise NotAuthorizedException(resp.status, error)
+
             if resp.status == 403:
                 raise UserLockedException(resp.status, error)
 
@@ -581,9 +599,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 raise InternalCommunicationException(resp.status, error)
 
             # we got an undocumented status code
-            raise ApiException(
-                f"Unknown API response [{resp.status}] - {error}"
-            )
+            raise ApiException(f"Unknown API response [{resp.status}] - {error}")
 
     def _relogin(fn):
         """Decorator for automatic re-login if session was expired."""
@@ -592,7 +608,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         async def _wrapper(self, *args, **kwargs):
             try:
                 return await fn(self, *args, **kwargs)
-            except AuthenticationException:
+            except (AuthenticationException, NotAuthorizedException):
                 pass
 
             logger.debug("Request failed - try to re-login")
@@ -690,8 +706,8 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         :param processdata_id: optional, if given `module_id` must be string. Can
                                be either a string or a list of string. If missing
                                all process data ids are returned.
-        :return: a dictionary with the module id as key and a instance of :py:class:`ProcessDataCollection`
-                 as value
+        :return: a dictionary with the module id as key and a instance of
+                 :py:class:`ProcessDataCollection` as value
         """
         if isinstance(module_id, str) and processdata_id is None:
             # get all process data of a module

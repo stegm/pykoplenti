@@ -2,9 +2,8 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-
 [tool.black]
-target-version = ["py37", "py38"]
+target-version = ["py310"]
 
 [tool.isort]
 profile = "black"
@@ -17,3 +16,6 @@ forced_separate = [
     "tests",
 ]
 combine_as_imports = true
+
+[tool.ruff]
+line-length = 88
