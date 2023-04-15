@@ -299,6 +299,15 @@ class AuthenticationException(ApiException):
         self.error = error
 
 
+class NotAuthorizedException(ApiException):
+    """Exception for calles without authentication."""
+
+    def __init__(self, status_code: int, error: str):
+        super().__init__(f"Not authorized ([{status_code}] - {error})")
+        self.status_code = status_code
+        self.error = error
+
+
 class UserLockedException(ApiException):
     """Exception for user locked error response."""
 
@@ -573,6 +582,9 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             if resp.status == 400:
                 raise AuthenticationException(resp.status, error)
 
+            if resp.status == 401:
+                raise NotAuthorizedException(resp.status, error)
+
             if resp.status == 403:
                 raise UserLockedException(resp.status, error)
 
@@ -592,7 +604,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         async def _wrapper(self, *args, **kwargs):
             try:
                 return await fn(self, *args, **kwargs)
-            except AuthenticationException:
+            except (AuthenticationException, NotAuthorizedException):
                 pass
 
             logger.debug("Request failed - try to re-login")

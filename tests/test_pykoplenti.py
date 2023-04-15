@@ -1,4 +1,6 @@
 from datetime import datetime
+
+import pytest
 import pykoplenti
 import json
 
@@ -138,3 +140,25 @@ def test_process_data_collection_can_be_iterated():
     assert len(result) == 2
     assert result[0].id == "Statistic:Yield:Day"
     assert result[1].id == "Statistic:Yield:Month"
+
+
+@pytest.mark.asyncio
+async def test_relogin_on_401_response(
+    pykoplenti_client: pykoplenti.ApiClient, client_response_factory
+):
+    """Ensures that a re-login is executed if a 401 response was returned."""
+
+    # First response returns 401
+    response1 = client_response_factory()
+    response1.status = 401
+
+    # Second response is successfull
+    response2 = client_response_factory()
+    response2.status = 200
+    response2.json.return_value = [
+        {"moduleid": "moda", "processdata": [{"id": "procb", "unit": "", "value": 0}]}
+    ]
+
+    _ = await pykoplenti_client.get_process_data_values("moda", "procb")
+
+    pykoplenti_client._login.assert_awaited_once()
