@@ -16,3 +16,6 @@ forced_separate = [
     "tests",
 ]
 combine_as_imports = true
+
+[tool.ruff]
+line-length = 88

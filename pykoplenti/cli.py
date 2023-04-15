@@ -253,7 +253,7 @@ def download_log(global_args, out, begin, end):
     """Download the log data from the inverter to a file."""
 
     async def fn(client: ApiClient):
-        data = await client.download_logdata(writer=out, begin=begin, end=end)
+        await client.download_logdata(writer=out, begin=begin, end=end)
 
     asyncio.run(
         command_main(global_args.host, global_args.port, global_args.passwd, fn)

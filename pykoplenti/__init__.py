@@ -415,13 +415,17 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         password: Union[str, None] = None,
         user: Union[str, None] = None,
     ):
-        """Login with the given password (key). If a service code is provided user is 'master', else 'user'.
+        """Login with the given password (key).
+
+        If a service code is provided user is 'master', else 'user'.
 
         Parameters
         ----------
-        :param key: The user password. If 'service_code' is given, 'key' is the Master Key (also called Device ID).
+        :param key: The user password. If 'service_code' is given, 'key' is the
+                    Master Key (also called Device ID).
         :type key: str, None
-        :param service_code: Installer service code. If given the user is assumed to be 'master', else 'user'.
+        :param service_code: Installer service code. If given the user is assumed to be
+                             'master', else 'user'.
         :type service_code: str, None
         :param password: Deprecated, use key instead.
         :param user: Deprecated, user is chosen automatically depending on service_code.
@@ -702,8 +706,8 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         :param processdata_id: optional, if given `module_id` must be string. Can
                                be either a string or a list of string. If missing
                                all process data ids are returned.
-        :return: a dictionary with the module id as key and a instance of :py:class:`ProcessDataCollection`
-                 as value
+        :return: a dictionary with the module id as key and a instance of
+                 :py:class:`ProcessDataCollection` as value
         """
         if isinstance(module_id, str) and processdata_id is None:
             # get all process data of a module
