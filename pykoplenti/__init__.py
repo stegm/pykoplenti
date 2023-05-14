@@ -601,6 +601,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             # we got an undocumented status code
             raise ApiException(f"Unknown API response [{resp.status}] - {error}")
 
+    @staticmethod
     def _relogin(fn):
         """Decorator for automatic re-login if session was expired."""
 
