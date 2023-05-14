@@ -11,7 +11,8 @@ black = "~=23.1"
 isort = "~=5.12"
 ruff = "*"
 pytest = "~=7.2"
-pytest-asyncio = "≃0.21"
+pytest-asyncio = "~=0.21"
+mypy = "*"
 
 [requires]
 python_version = "3.10"
