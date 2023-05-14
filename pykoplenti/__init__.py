@@ -9,7 +9,7 @@ from json import dumps
 import locale
 import logging
 from os import urandom
-from typing import IO, Dict, Iterable, Union
+from typing import IO, Dict, Iterable, List, Union
 import warnings
 
 from Crypto.Cipher import AES
@@ -384,10 +384,10 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         self.websession = websession
         self.host = host
         self.port = port
-        self.session_id = None
-        self._key = None
-        self._service_code = None
-        self._user = None
+        self.session_id: Union[str, None] = None
+        self._key: Union[str, None] = None
+        self._service_code: Union[str, None] = None
+        self._user: Union[str, None] = None
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Logout support for context manager."""
@@ -544,8 +544,8 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             "tag": b64encode(auth_tag).decode("utf-8"),
             # ID of authentication transaction
             "transactionId": b64encode(transaction_id).decode("utf-8"),
-            # Only the token or token and service code (separated by colon). Encrypted with
-            # AES using the protocol key
+            # Only the token or token and service code (separated by colon). Encrypted
+            # with AES using the protocol key
             "payload": b64encode(cipher_text).decode("utf-8"),
         }
 
@@ -564,7 +564,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         :param **kwargs: all other args are forwarded to the request
         """
 
-        headers = {}
+        headers: Dict[str, str] = {}
         if self.session_id is not None:
             headers["authorization"] = f"Session {self.session_id}"
 
@@ -697,7 +697,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
     async def get_process_data_values(
         self,
         module_id: Union[str, Dict[str, Iterable[str]]],
-        processdata_id: Union[str, Iterable[str]] = None,
+        processdata_id: Union[str, Iterable[str], None] = None,
     ) -> Dict[str, ProcessDataCollection]:
         """Returns a dictionary of process data of one or more modules.
 
@@ -733,7 +733,11 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                     )
                 }
 
-        if isinstance(module_id, str) and hasattr(processdata_id, "__iter__"):
+        if (
+            isinstance(module_id, str)
+            and processdata_id is not None
+            and hasattr(processdata_id, "__iter__")
+        ):
             # get multiple process data of a module
             ids = ",".join(processdata_id)
             async with self._session_request(f"processdata/{module_id}/{ids}") as resp:
@@ -763,12 +767,12 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
         raise TypeError("Invalid combination of module_id and processdata_id.")
 
-    async def get_settings(self) -> Dict[str, Iterable[SettingsData]]:
+    async def get_settings(self) -> Mapping[str, Iterable[SettingsData]]:
         """Returns list of all modules with a list of available settings identifiers."""
         async with self._session_request("settings") as resp:
             await self._check_response(resp)
             response = await resp.json()
-            result = {}
+            result: Dict[str, List[SettingsData]] = {}
             for module in response:
                 id = module["moduleid"]
                 data = list([SettingsData(x) for x in module["settings"]])
@@ -779,9 +783,9 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
     @_relogin
     async def get_setting_values(
         self,
-        module_id: Union[str, Dict[str, Iterable[str]]],
-        setting_id: Union[str, Iterable[str]] = None,
-    ) -> Dict[str, Dict[str, str]]:
+        module_id: Union[str, Mapping[str, Iterable[str]]],
+        setting_id: Union[str, Iterable[str], None] = None,
+    ) -> Mapping[str, Mapping[str, str]]:
         """Returns a dictionary of setting values of one or more modules.
 
         :param module_id: required, must be a module id or a dictionary with the
@@ -806,7 +810,11 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {module_id: {data_response[0]["id"]: data_response[0]["value"]}}
 
-        if isinstance(module_id, str) and hasattr(setting_id, "__iter__"):
+        if (
+            isinstance(module_id, str)
+            and setting_id is not None
+            and hasattr(setting_id, "__iter__")
+        ):
             # get multiple settings of a module
             ids = ",".join(setting_id)
             async with self._session_request(f"settings/{module_id}/{ids}") as resp:
@@ -848,7 +856,10 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
     @_relogin
     async def download_logdata(
-        self, writer: IO, begin: datetime = None, end: datetime = None
+        self,
+        writer: IO,
+        begin: Union[datetime, None] = None,
+        end: Union[datetime, None] = None,
     ):
         """Download logdata as tab-separated file."""
         request = {}

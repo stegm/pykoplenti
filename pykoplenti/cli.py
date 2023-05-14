@@ -7,7 +7,7 @@ from pprint import pprint
 import re
 import tempfile
 import traceback
-from typing import Callable
+from typing import Any, Awaitable, Callable, Dict, Union
 
 from aiohttp import ClientSession, ClientTimeout
 import click
@@ -22,7 +22,7 @@ class SessionCache:
     def __init__(self, host):
         self.host = host
 
-    def read_session_id(self) -> str:
+    def read_session_id(self) -> Union[str, None]:
         file = os.path.join(tempfile.gettempdir(), f"pykoplenti-session-{self.host}")
         if os.path.isfile(file):
             with open(file, "rt") as f:
@@ -159,7 +159,7 @@ async def repl_main(host, port, passwd):
 
 
 async def command_main(
-    host: str, port: int, passwd: str, fn: Callable[[ApiClient], None]
+    host: str, port: int, passwd: str, fn: Callable[[ApiClient], Awaitable[Any]]
 ):
     async with ClientSession(timeout=ClientTimeout(total=10)) as session:
         client = ApiClient(session, host=host, port=port)
@@ -171,7 +171,8 @@ async def command_main(
         if not me.is_authenticated:
             # create a new session
             await client.login(passwd)
-            session_cache.write_session_id(client.session_id)
+            if client.session_id is not None:
+                session_cache.write_session_id(client.session_id)
 
         await fn(client)
 
@@ -388,7 +389,7 @@ def write_settings(global_args, id_values):
     """
 
     async def fn(client: ApiClient):
-        query = defaultdict(dict)
+        query: Dict[str, Dict[str, str]] = defaultdict(dict)
         for id_value in id_values:
             m = re.match(
                 r"(?P<module_id>.+)/(?P<setting_id>.+)=(?P<value>.+)", id_value
