@@ -519,7 +519,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         async with self._session_request("modules") as resp:
             await self._check_response(resp)
             modules_response = await resp.json()
-            return [ModuleData(x) for x in modules_response]
+            return [ModuleData(**x) for x in modules_response]
 
     @_relogin
     async def get_process_data(self) -> Dict[str, Iterable[str]]:
@@ -617,7 +617,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             result: Dict[str, List[SettingsData]] = {}
             for module in response:
                 id = module["moduleid"]
-                data = list([SettingsData(x) for x in module["settings"]])
+                data = list([SettingsData(**x) for x in module["settings"]])
                 result[id] = data
 
             return result
