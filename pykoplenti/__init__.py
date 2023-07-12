@@ -5,7 +5,6 @@ from datetime import datetime
 import functools
 import hashlib
 import hmac
-from json import dumps
 import locale
 import logging
 from os import urandom
@@ -14,143 +13,52 @@ import warnings
 
 from Crypto.Cipher import AES
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
+from pydantic import BaseModel, Field, parse_obj_as
 from yarl import URL
 
 logger = logging.getLogger(__name__)
 
 
-class MeData:
+class MeData(BaseModel):
     """Represent the data of the 'me'-request."""
 
-    def __init__(self, raw):
-        self._raw = raw
-
-    @property
-    def is_locked(self) -> bool:
-        return self._raw["locked"]
-
-    @property
-    def is_active(self) -> bool:
-        return self._raw["active"]
-
-    @property
-    def is_authenticated(self) -> bool:
-        return self._raw["authenticated"]
-
-    @property
-    def permissions(self) -> Iterable[str]:
-        return self._raw["permissions"]
-
-    @property
-    def is_anonymous(self) -> bool:
-        return self._raw["anonymous"]
-
-    @property
-    def role(self) -> str:
-        return self._raw["role"]
-
-    def __str__(self):
-        return (
-            f"Me(locked={self.is_locked}, "
-            f"active={self.is_active}, "
-            f"authenticated={self.is_authenticated}, "
-            f"permissions={str(self.permissions)}, "
-            f"anonymous={self.is_anonymous}, "
-            f"role={self.role})"
-        )
-
-    def __repr__(self):
-        return dumps(self._raw)
+    is_locked: bool = Field(alias="locked")
+    is_active: bool = Field(alias="active")
+    is_authenticated: bool = Field(alias="authenticated")
+    permissions: List[str] = Field()
+    is_anonymous: bool = Field(alias="anonymous")
+    role: str
 
 
-class VersionData:
+class VersionData(BaseModel):
     """Represent the data of the 'version'-request."""
 
-    def __init__(self, raw):
-        self._raw = raw
-
-    @property
-    def api_version(self) -> str:
-        return self._raw["api_version"]
-
-    @property
-    def hostname(self) -> bool:
-        return self._raw["hostname"]
-
-    @property
-    def name(self) -> bool:
-        return self._raw["name"]
-
-    @property
-    def sw_version(self) -> Iterable[str]:
-        return self._raw["sw_version"]
-
-    def __str__(self):
-        return (
-            f"Version(api_version={self.api_version}, "
-            f"hostname={self.hostname}, "
-            f"name={self.name}, "
-            f"sw_version={str(self.sw_version)})"
-        )
-
-    def __repr__(self):
-        return dumps(self._raw)
+    api_version: str
+    hostname: str
+    name: str
+    sw_version: str
 
 
-class ModuleData:
+class ModuleData(BaseModel):
     """Represents a single module."""
 
-    def __init__(self, raw):
-        self._raw = raw
-
-    @property
-    def id(self) -> str:
-        return self._raw["id"]
-
-    @property
-    def type(self) -> str:
-        return self._raw["type"]
-
-    def __str__(self):
-        return f"Module(id={self.id}, type={self.type})"
-
-    def __repr__(self):
-        return dumps(self._raw)
+    id: str
+    type: str
 
 
-class ProcessData:
+class ProcessData(BaseModel):
     """Represents a single process data."""
 
-    def __init__(self, raw):
-        self._raw = raw
-
-    @property
-    def id(self) -> str:
-        return self._raw["id"]
-
-    @property
-    def unit(self) -> str:
-        return self._raw["unit"]
-
-    @property
-    def value(self) -> float:
-        return self._raw["value"]
-
-    def __str__(self):
-        return (
-            f"ProcessData(id={self.id}, " f"unit={self.unit}, " f"value={self.value})"
-        )
-
-    def __repr__(self):
-        return dumps(self._raw)
+    id: str
+    unit: str
+    value: float
 
 
 class ProcessDataCollection(Mapping):
     """Represents a collection of process data value."""
 
-    def __init__(self, raw):
-        self._process_data = list([ProcessData(x) for x in raw])
-        self._raw = raw
+    def __init__(self, process_data):
+        self._process_data = process_data
 
     def __len__(self):
         return len(self._process_data)
@@ -164,109 +72,40 @@ class ProcessDataCollection(Mapping):
         except StopIteration:
             raise KeyError(item)
 
+    def __str__(self):
+        return "[" + ",".join(str(x) for x in self._process_data) + "]"
+
     def __repr__(self):
-        return self._raw
+        return (
+            "ProcessDataCollection(["
+            + ",".join(repr(x) for x in self._process_data)
+            + "])"
+        )
 
 
-class SettingsData:
+class SettingsData(BaseModel):
     """Represents a single settings data."""
 
-    def __init__(self, raw):
-        self._raw = raw
-
-    @property
-    def unit(self) -> str:
-        return self._raw["unit"]
-
-    @property
-    def default(self) -> str:
-        return self._raw["default"]
-
-    @property
-    def id(self) -> str:
-        return self._raw["id"]
-
-    @property
-    def max(self) -> str:
-        return self._raw["max"]
-
-    @property
-    def min(self) -> str:
-        return self._raw["min"]
-
-    @property
-    def type(self) -> str:
-        return self._raw["type"]
-
-    @property
-    def access(self) -> str:
-        return self._raw["access"]
-
-    def __str__(self):
-        return (
-            f"SettingsData(id={self.id}, unit={self.unit}, "
-            f"default={self.default}, "
-            f"min={self.min}, max={self.max},"
-            f"type={self.type}, access={self.access})"
-        )
-
-    def __repr__(self):
-        return dumps(self._raw)
+    min: str | None
+    max: str | None
+    default: str | None
+    access: str
+    unit: str | None
+    id: str
+    type: str
 
 
-class EventData:
+class EventData(BaseModel):
     """Represents an event of the inverter."""
 
-    def __init__(self, raw):
-        self._raw = raw
-
-    @property
-    def start_time(self) -> datetime:
-        ts = self._raw["start_time"]
-        # "2020-12-26T10:18:35.854Z"
-        return datetime.fromisoformat(ts)
-
-    @property
-    def end_time(self) -> datetime:
-        ts = self._raw["end_time"]
-        # "2020-12-26T10:18:35.854Z"
-        return datetime.fromisoformat(ts)
-
-    @property
-    def is_active(self) -> bool:
-        return self._raw["is_active"]
-
-    @property
-    def code(self) -> int:
-        return self._raw["code"]
-
-    @property
-    def long_description(self) -> str:
-        return self._raw["long_description"]
-
-    @property
-    def category(self) -> str:
-        return self._raw["category"]
-
-    @property
-    def description(self) -> str:
-        return self._raw["description"]
-
-    @property
-    def group(self) -> str:
-        return self._raw["group"]
-
-    def __str__(self):
-        return (
-            f"EventData(start={self.start_time}, end={self.end_time}, "
-            f"code={self.code}, "
-            f"category={self.category()}, "
-            f"description={self.description}, "
-            f"group={self.group})"
-        )
-
-    def __repr__(self):
-        return dumps(self._raw)
+    start_time: datetime
+    end_time: datetime
+    code: int
+    long_description: str
+    category: str
+    description: str
+    group: str
+    is_active: bool
 
 
 class ApiException(Exception):
@@ -633,7 +472,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         async with self._session_request("auth/me") as resp:
             await self._check_response(resp)
             me_response = await resp.json()
-            return MeData(me_response)
+            return MeData(**me_response)
 
     async def get_version(self) -> VersionData:
         """Returns information about the API of the inverter.
@@ -643,7 +482,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         async with self._session_request("info/version") as resp:
             await self._check_response(resp)
             response = await resp.json()
-            return VersionData(response)
+            return VersionData(**response)
 
     @_relogin
     async def get_events(self, max_count=10, lang=None) -> Iterable[EventData]:
@@ -717,7 +556,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     data_response[0]["moduleid"]: ProcessDataCollection(
-                        data_response[0]["processdata"]
+                        parse_obj_as(list[ProcessData], data_response[0]["processdata"])
                     )
                 }
 
@@ -730,7 +569,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     data_response[0]["moduleid"]: ProcessDataCollection(
-                        data_response[0]["processdata"]
+                        parse_obj_as(list[ProcessData], data_response[0]["processdata"])
                     )
                 }
 
@@ -746,7 +585,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     data_response[0]["moduleid"]: ProcessDataCollection(
-                        data_response[0]["processdata"]
+                        parse_obj_as(list[ProcessData], data_response[0]["processdata"])
                     )
                 }
 
@@ -762,7 +601,9 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 await self._check_response(resp)
                 data_response = await resp.json()
                 return {
-                    x["moduleid"]: ProcessDataCollection(x["processdata"])
+                    x["moduleid"]: ProcessDataCollection(
+                        parse_obj_as(List[ProcessData], x["processdata"])
+                    )
                     for x in data_response
                 }
 
