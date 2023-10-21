@@ -334,3 +334,49 @@ class TestSmokeTests:
         assert setting_value == {
             "devices:local": {"Branding:ProductName1": "PLENTICORE plus"}
         }
+
+    @pytest.mark.asyncio
+    async def test_smoketest_process_data_value1(
+        self, authenticated_client: pykoplenti.ApiClient
+    ):
+        """Retrieves process data values by using str, str variant."""
+        process_data = await authenticated_client.get_process_data_values(
+            "devices:local", "EM_State"
+        )
+
+        assert process_data.keys() == {"devices:local"}
+        assert len(process_data["devices:local"]) == 1
+        assert process_data["devices:local"]["EM_State"] is not None
+
+    @pytest.mark.asyncio
+    async def test_smoketest_process_data_value2(
+        self, authenticated_client: pykoplenti.ApiClient
+    ):
+        """Retrieves process data values by using str, Iterable[str] variant."""
+        process_data = await authenticated_client.get_process_data_values(
+            "devices:local", ["EM_State", "Inverter:State"]
+        )
+
+        assert process_data.keys() == {"devices:local"}
+        assert len(process_data["devices:local"]) == 2
+        assert process_data["devices:local"]["EM_State"] is not None
+        assert process_data["devices:local"]["Inverter:State"] is not None
+
+    @pytest.mark.asyncio
+    async def test_smoketest_process_data_value3(
+        self, authenticated_client: pykoplenti.ApiClient
+    ):
+        """Retrieves process data values by using Dict[str, Iterable[str]] variant."""
+        process_data = await authenticated_client.get_process_data_values(
+            {
+                "devices:local": ["EM_State", "Inverter:State"],
+                "scb:export": ["PortalConActive"],
+            }
+        )
+
+        assert process_data.keys() == {"devices:local", "scb:export"}
+        assert len(process_data["devices:local"]) == 2
+        assert process_data["devices:local"]["EM_State"] is not None
+        assert process_data["devices:local"]["Inverter:State"] is not None
+        assert len(process_data["scb:export"]) == 1
+        assert process_data["scb:export"]["PortalConActive"] is not None
