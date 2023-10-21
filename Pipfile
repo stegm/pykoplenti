@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 pykoplenti = {editable = true, extras = ["cli"], path = "."}
+pydantic = "~=1.10.7"
 
 [dev-packages]
 black = "~=23.1"
