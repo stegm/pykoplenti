@@ -1,6 +1,8 @@
 from base64 import b64decode, b64encode
+from collections import defaultdict
 from collections.abc import Mapping
 import contextlib
+from dataclasses import dataclass
 from datetime import datetime
 import functools
 import hashlib
@@ -8,7 +10,7 @@ import hmac
 import locale
 import logging
 from os import urandom
-from typing import IO, Dict, Iterable, List, Union
+from typing import IO, Dict, Iterable, Iterator, List, TypedDict, Union
 import warnings
 
 from Crypto.Cipher import AES
@@ -57,16 +59,16 @@ class ProcessData(BaseModel):
 class ProcessDataCollection(Mapping):
     """Represents a collection of process data value."""
 
-    def __init__(self, process_data):
+    def __init__(self, process_data: list[ProcessData]):
         self._process_data = process_data
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._process_data)
 
-    def __iter__(self):
-        return iter(self._process_data)
+    def __iter__(self) -> Iterator[ProcessData]:
+        return (x.id for x in self._process_data)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> ProcessData:
         try:
             return next(x for x in self._process_data if x.id == item)
         except StopIteration:
@@ -246,6 +248,10 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             path=ApiClient.BASE_URL,
         )
         return base.join(URL(path))
+
+    async def initialize_virtual_process_data(self):
+        process_data = await self.get_process_data()
+        self._virt_process_data.initialize(process_data)
 
     async def login(
         self,
@@ -549,6 +555,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         :return: a dictionary with the module id as key and a instance of
                  :py:class:`ProcessDataCollection` as value
         """
+
         if isinstance(module_id, str) and processdata_id is None:
             # get all process data of a module
             async with self._session_request(f"processdata/{module_id}") as resp:

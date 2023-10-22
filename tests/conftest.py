@@ -1,8 +1,9 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock
 from aiohttp import ClientResponse, ClientSession
-from typing import Callable
+from typing import Any, Callable
 import pykoplenti
+import pykoplenti.extended
 
 
 @pytest.fixture
@@ -23,11 +24,17 @@ def websession(websession_responses) -> MagicMock:
 
 
 @pytest.fixture
-def client_response_factory(websession_responses) -> Callable[[], MagicMock]:
+def client_response_factory(
+    websession_responses,
+) -> Callable[[int, list[Any] | dict[Any, Any]], MagicMock]:
     """Provides a factory to add responses to a ClientSession."""
 
-    def factory():
+    def factory(status: int = 200, json: list[Any] | dict[Any, Any] | None = None):
         response = MagicMock(spec_set=ClientResponse, name="request Mock")
+        response.status = status
+        if json is not None:
+            response.json.return_value = json
+
         websession_responses.append(response)
         return response
 
@@ -36,11 +43,24 @@ def client_response_factory(websession_responses) -> Callable[[], MagicMock]:
 
 @pytest.fixture
 def pykoplenti_client(websession) -> pykoplenti.ApiClient:
-    """Returns a pyokplent API-Client.
+    """Returns a pykoplenti API-Client.
 
     The _login method is replaced with an AsyncMock.
     """
     client = pykoplenti.ApiClient(websession, "localhost")
+    login_mock = AsyncMock()
+    client._login = login_mock
+
+    return client
+
+
+@pytest.fixture
+def pykoplenti_extended_client(websession) -> pykoplenti.extended.ExtendedApiClient:
+    """Returns a pykoplenti Extended API-Client.
+
+    The _login method is replaced with an AsyncMock.
+    """
+    client = pykoplenti.extended.ExtendedApiClient(websession, "localhost")
     login_mock = AsyncMock()
     client._login = login_mock
 
