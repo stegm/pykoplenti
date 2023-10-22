@@ -310,7 +310,7 @@ def read_processdata(global_args, ids):
             values = await client.get_process_data_values(query)
 
         for k, v in values.items():
-            for x in v:
+            for x in v.values():
                 print(f"{k}/{x.id}={x.value}")
 
     asyncio.run(

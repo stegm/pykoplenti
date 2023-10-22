@@ -2,6 +2,7 @@ from datetime import datetime
 import os
 import re
 from typing import AsyncGenerator
+from unittest.mock import ANY, MagicMock
 import aiohttp
 
 import pytest
@@ -171,9 +172,7 @@ def test_process_data_collection_can_be_iterated():
 
     result = list(pdc)
 
-    assert len(result) == 2
-    assert result[0].id == "Statistic:Yield:Day"
-    assert result[1].id == "Statistic:Yield:Month"
+    assert result == ["Statistic:Yield:Day", "Statistic:Yield:Month"]
 
 
 @pytest.mark.asyncio
@@ -196,6 +195,55 @@ async def test_relogin_on_401_response(
     _ = await pykoplenti_client.get_process_data_values("moda", "procb")
 
     pykoplenti_client._login.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_process_data_value(
+    pykoplenti_client: pykoplenti.ApiClient,
+    client_response_factory,
+    websession: MagicMock,
+):
+    """Test if process data values could be retrieved."""
+    client_response_factory(
+        200,
+        [
+            {
+                "moduleid": "devices:local:pv1",
+                "processdata": [
+                    {"id": "P", "unit": "W", "value": 700.0},
+                ],
+            },
+            {
+                "moduleid": "devices:local:pv2",
+                "processdata": [
+                    {"id": "P", "unit": "W", "value": 300.0},
+                ],
+            },
+        ],
+    )
+
+    values = await pykoplenti_client.get_process_data_values(
+        {"devices:local:pv1": ["P"], "devices:local:pv2": ["P"]}
+    )
+
+    websession.request.assert_called_once_with(
+        "POST",
+        ANY,
+        headers=ANY,
+        json=[
+            {"moduleid": "devices:local:pv1", "processdataids": ["P"]},
+            {"moduleid": "devices:local:pv2", "processdataids": ["P"]},
+        ],
+    )
+
+    assert values == {
+        "devices:local:pv1": pykoplenti.ProcessDataCollection(
+            [pykoplenti.ProcessData(id="P", unit="W", value="700.0")]
+        ),
+        "devices:local:pv2": pykoplenti.ProcessDataCollection(
+            [pykoplenti.ProcessData(id="P", unit="W", value="300.0")]
+        ),
+    }
 
 
 @pytest_asyncio.fixture
