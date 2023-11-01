@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections import ChainMap, defaultdict
 from typing import Final, Iterable, Literal, Union
 
@@ -8,11 +9,11 @@ from pykoplenti import ApiClient, ProcessData, ProcessDataCollection
 _VIRT_MODUL_ID: Final = "_virt_"
 
 
-class _VirtProcessDataItemBase:
+class _VirtProcessDataItemBase(ABC):
     def __init__(self, processid: str, process_data: dict[str, list[str]]) -> None:
         self.processid = processid
         self.process_data = process_data
-        self.available_process_data = defaultdict(list)
+        self.available_process_data: dict[str, list[str]] = defaultdict(list)
 
     def update_actual_process_ids(self, data: dict[str, list[str]]):
         self.available_process_data.clear()
@@ -21,6 +22,16 @@ class _VirtProcessDataItemBase:
                 for pid in pids:
                     if pid in data[mid]:
                         self.available_process_data[mid].append(pid)
+
+    @abstractmethod
+    def get_value(
+        self, process_values: dict[str, ProcessDataCollection]
+    ) -> ProcessData:
+        ...
+
+    @abstractmethod
+    def is_available(self) -> bool:
+        ...
 
 
 class _VirtProcessDataItemSum(_VirtProcessDataItemBase):
@@ -39,7 +50,9 @@ class _VirtProcessDataItemSum(_VirtProcessDataItemBase):
 
 
 class _VirtProcessDataItemEnergyToGrid(_VirtProcessDataItemBase):
-    def __init__(self, processid: str, scope: Literal["Total"]) -> None:
+    def __init__(
+        self, processid: str, scope: Literal["Total", "Year", "Month", "Day"]
+    ) -> None:
         super().__init__(
             processid,
             {
@@ -94,7 +107,7 @@ class _VirtProcessDataManager:
     def adapt_data_response(
         self, process_data: dict[str, list[str]]
     ) -> dict[str, list[str]]:
-        virt_process_data = {_VIRT_MODUL_ID: []}
+        virt_process_data: dict[str, list[str]] = {_VIRT_MODUL_ID: []}
 
         for vpd in self._virt_process_data:
             if vpd.is_available():
@@ -111,13 +124,13 @@ class _VirtProcessDataManager:
             for vpd in self._virt_process_data:
                 if vpd.is_available():
                     if id == vpd.processid:
-                        ids = vpd.available_process_data
+                        vids = vpd.available_process_data
                         break
                     else:
                         raise ValueError(f"No virtual process data '{id}'.")
 
             # add ids for virtual if they are missing
-            for mid, pids in ids.items():
+            for mid, pids in vids.items():
                 ids = result[mid]
                 for pid in pids:
                     if pid not in ids:
@@ -177,7 +190,7 @@ class ExtendedApiClient(ApiClient):
             # short-cut if no virtual process is requested
             return await super().get_process_data_values(module_id, processdata_id)
 
-        process_data = {}
+        process_data: dict[str, list[str]] = {}
         if isinstance(module_id, str) and processdata_id is None:
             process_data[module_id] = []
         elif isinstance(module_id, str) and isinstance(processdata_id, str):
