@@ -329,3 +329,170 @@ async def test_virtual_process_data_and_normal_process_data(
             [pykoplenti.ProcessData(id="P", unit="W", value=300.0)]
         ),
     }
+
+
+@pytest.mark.asyncio
+async def test_virtual_process_data_not_all_requested(
+    pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+    client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+    websession: MagicMock,
+):
+    """Test if not all available virtual process data are requested."""
+    client_response_factory(
+        200,
+        [
+            {"moduleid": "devices:local:pv1", "processdataids": ["P"]},
+            {"moduleid": "devices:local:pv2", "processdataids": ["P"]},
+            {
+                "moduleid": "scb:statistic:EnergyFlow",
+                "processdataids": [
+                    "Statistic:Yield:Total",
+                    "Statistic:EnergyHomeBat:Total",
+                    "Statistic:EnergyHomePv:Total",
+                ],
+            },
+        ],
+    )
+    client_response_factory(
+        200,
+        [
+            {
+                "moduleid": "devices:local:pv1",
+                "processdata": [
+                    {"id": "P", "unit": "W", "value": 700.0},
+                ],
+            },
+            {
+                "moduleid": "devices:local:pv2",
+                "processdata": [
+                    {"id": "P", "unit": "W", "value": 300.0},
+                ],
+            },
+        ],
+    )
+
+    values = await pykoplenti_extended_client.get_process_data_values(
+        {"_virt_": ["pv_P"]}
+    )
+
+    websession.request.assert_has_calls(
+        [
+            call("GET", ANY, headers=ANY),
+            call(
+                "POST",
+                ANY,
+                headers=ANY,
+                json=[
+                    {"moduleid": "devices:local:pv1", "processdataids": ["P"]},
+                    {"moduleid": "devices:local:pv2", "processdataids": ["P"]},
+                ],
+            ),
+        ],
+        any_order=True,
+    )
+
+    assert values == {
+        "_virt_": pykoplenti.ProcessDataCollection(
+            [pykoplenti.ProcessData(id="pv_P", unit="W", value=1000.0)]
+        ),
+    }
+
+
+@pytest.mark.asyncio
+async def test_virtual_process_data_multiple_requested(
+    pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+    client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+    websession: MagicMock,
+):
+    """Test if multiple virtual process data are requested."""
+    client_response_factory(
+        200,
+        [
+            {"moduleid": "devices:local:pv1", "processdataids": ["P"]},
+            {"moduleid": "devices:local:pv2", "processdataids": ["P"]},
+            {
+                "moduleid": "scb:statistic:EnergyFlow",
+                "processdataids": [
+                    "Statistic:Yield:Total",
+                    "Statistic:EnergyHomeBat:Total",
+                    "Statistic:EnergyHomePv:Total",
+                ],
+            },
+        ],
+    )
+    client_response_factory(
+        200,
+        [
+            {
+                "moduleid": "devices:local:pv1",
+                "processdata": [
+                    {"id": "P", "unit": "W", "value": 700.0},
+                ],
+            },
+            {
+                "moduleid": "devices:local:pv2",
+                "processdata": [
+                    {"id": "P", "unit": "W", "value": 300.0},
+                ],
+            },
+            {
+                "moduleid": "scb:statistic:EnergyFlow",
+                "processdata": [
+                    {
+                        "id": "Statistic:Yield:Total",
+                        "unit": "Wh",
+                        "value": 1000.0,
+                    },
+                    {
+                        "id": "Statistic:EnergyHomeBat:Total",
+                        "unit": "Wh",
+                        "value": 100.0,
+                    },
+                    {
+                        "id": "Statistic:EnergyHomePv:Total",
+                        "unit": "Wh",
+                        "value": 200.0,
+                    },
+                ],
+            },
+        ],
+    )
+
+    values = await pykoplenti_extended_client.get_process_data_values(
+        {"_virt_": ["pv_P", "Statistic:EnergyGrid:Total"]}
+    )
+
+    websession.request.assert_has_calls(
+        [
+            call("GET", ANY, headers=ANY),
+            call(
+                "POST",
+                ANY,
+                headers=ANY,
+                json=[
+                    {"moduleid": "devices:local:pv1", "processdataids": ["P"]},
+                    {"moduleid": "devices:local:pv2", "processdataids": ["P"]},
+                    {
+                        "moduleid": "scb:statistic:EnergyFlow",
+                        "processdataids": [
+                            "Statistic:Yield:Total",
+                            "Statistic:EnergyHomeBat:Total",
+                            "Statistic:EnergyHomePv:Total",
+                        ],
+                    },
+                ],
+            ),
+        ],
+        any_order=True,
+    )
+
+    assert values == {
+        "_virt_": pykoplenti.ProcessDataCollection(
+            [
+                pykoplenti.ProcessData(id="pv_P", unit="W", value=1000.0),
+                pykoplenti.ProcessData(
+                    id="Statistic:EnergyGrid:Total", unit="Wh", value=700.0
+                ),
+            ]
+        ),
+    }
