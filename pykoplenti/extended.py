@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import ChainMap, defaultdict
-from typing import Final, Iterable, Literal, Union
+from typing import Final, Iterable, Literal, Mapping, MutableMapping, Union
 
 from aiohttp import ClientSession
 from pykoplenti import ApiClient, ProcessData, ProcessDataCollection
@@ -15,7 +15,7 @@ class _VirtProcessDataItemBase(ABC):
         self.process_data = process_data
         self.available_process_data: dict[str, list[str]] = defaultdict(list)
 
-    def update_actual_process_ids(self, data: dict[str, list[str]]):
+    def update_actual_process_ids(self, data: Mapping[str, Iterable[str]]):
         self.available_process_data.clear()
         for mid, pids in self.process_data.items():
             if mid in data:
@@ -25,7 +25,7 @@ class _VirtProcessDataItemBase(ABC):
 
     @abstractmethod
     def get_value(
-        self, process_values: dict[str, ProcessDataCollection]
+        self, process_values: Mapping[str, ProcessDataCollection]
     ) -> ProcessData:
         ...
 
@@ -36,7 +36,7 @@ class _VirtProcessDataItemBase(ABC):
 
 class _VirtProcessDataItemSum(_VirtProcessDataItemBase):
     def get_value(
-        self, process_values: dict[str, ProcessDataCollection]
+        self, process_values: Mapping[str, ProcessDataCollection]
     ) -> ProcessData:
         values = []
         for mid, pids in self.available_process_data.items():
@@ -66,7 +66,7 @@ class _VirtProcessDataItemEnergyToGrid(_VirtProcessDataItemBase):
         self.scope = scope
 
     def get_value(
-        self, process_values: dict[str, ProcessDataCollection]
+        self, process_values: Mapping[str, ProcessDataCollection]
     ) -> ProcessData:
         statistics = process_values["scb:statistic:EnergyFlow"]
         energy_yield = statistics[f"Statistic:Yield:{self.scope}"].value
@@ -85,7 +85,7 @@ class _VirtProcessDataItemEnergyToGrid(_VirtProcessDataItemBase):
 
 class _VirtProcessDataManager:
     def __init__(self) -> None:
-        self._virt_process_data = [
+        self._virt_process_data: Iterable[_VirtProcessDataItemBase] = [
             _VirtProcessDataItemSum(
                 "pv_P",
                 {
@@ -100,13 +100,13 @@ class _VirtProcessDataManager:
             _VirtProcessDataItemEnergyToGrid("Statistic:EnergyGrid:Day", "Day"),
         ]
 
-    def initialize(self, data: dict[str, list[str]]):
+    def initialize(self, data: Mapping[str, Iterable[str]]):
         for vpd in self._virt_process_data:
             vpd.update_actual_process_ids(data)
 
     def adapt_data_response(
         self, process_data: dict[str, list[str]]
-    ) -> dict[str, list[str]]:
+    ) -> Mapping[str, list[str]]:
         virt_process_data: dict[str, list[str]] = {_VIRT_MODUL_ID: []}
 
         for vpd in self._virt_process_data:
@@ -116,40 +116,46 @@ class _VirtProcessDataManager:
         return ChainMap(process_data, virt_process_data)
 
     def adapt_value_request(
-        self, process_data: dict[str, list[str]]
-    ) -> dict[str, list[str]]:
-        result = defaultdict(list, process_data)
+        self, process_data: Mapping[str, Iterable[str]]
+    ) -> Mapping[str, Iterable[str]]:
+        result: MutableMapping[str, list[str]] = defaultdict(list)
 
-        for id in result.pop(_VIRT_MODUL_ID):
-            for vpd in self._virt_process_data:
-                if vpd.is_available():
-                    if id == vpd.processid:
-                        vids = vpd.available_process_data
+        for mid, pids in process_data.items():
+            result[mid].extend(pids)
+
+        for requested_virtual_process_id in result.pop(_VIRT_MODUL_ID):
+            for virtual_process_data in self._virt_process_data:
+                if virtual_process_data.is_available():
+                    if requested_virtual_process_id == virtual_process_data.processid:
+                        # add ids for virtual if they are missing
+                        for (
+                            mid,
+                            pids,
+                        ) in virtual_process_data.available_process_data.items():
+                            ids = result[mid]
+                            for pid in pids:
+                                if pid not in ids:
+                                    ids.append(pid)
                         break
-                    else:
-                        raise ValueError(f"No virtual process data '{id}'.")
-
-            # add ids for virtual if they are missing
-            for mid, pids in vids.items():
-                ids = result[mid]
-                for pid in pids:
-                    if pid not in ids:
-                        ids.append(pid)
+            else:
+                raise ValueError(
+                    f"No virtual process data '{requested_virtual_process_id}'."
+                )
 
         return result
 
     def adapt_value_response(
         self,
-        values: dict[str, ProcessDataCollection],
-        request_data: dict[str, list[str]],
-    ) -> dict[str, ProcessDataCollection]:
+        values: Mapping[str, ProcessDataCollection],
+        request_data: Mapping[str, Iterable[str]],
+    ) -> Mapping[str, ProcessDataCollection]:
         result = {}
 
         # add virtual items
         virtual_process_data_values = []
         for id in request_data[_VIRT_MODUL_ID]:
             for vpd in self._virt_process_data:
-                if vpd.is_available():
+                if vpd.processid == id:
                     virtual_process_data_values.append(vpd.get_value(values))
         result["_virt_"] = ProcessDataCollection(virtual_process_data_values)
 
@@ -170,7 +176,7 @@ class ExtendedApiClient(ApiClient):
         self._virt_process_data = _VirtProcessDataManager()
         self._virt_process_data_initialized = False
 
-    async def get_process_data(self) -> dict[str, Iterable[str]]:
+    async def get_process_data(self) -> Mapping[str, Iterable[str]]:
         process_data = await super().get_process_data()
 
         self._virt_process_data.initialize(process_data)
@@ -181,7 +187,7 @@ class ExtendedApiClient(ApiClient):
         self,
         module_id: Union[str, dict[str, Iterable[str]]],
         processdata_id: Union[str, Iterable[str], None] = None,
-    ) -> dict[str, ProcessDataCollection]:
+    ) -> Mapping[str, ProcessDataCollection]:
         contains_virt_process_data = (
             isinstance(module_id, str) and _VIRT_MODUL_ID == module_id
         ) or (isinstance(module_id, dict) and _VIRT_MODUL_ID in module_id)
@@ -190,7 +196,7 @@ class ExtendedApiClient(ApiClient):
             # short-cut if no virtual process is requested
             return await super().get_process_data_values(module_id, processdata_id)
 
-        process_data: dict[str, list[str]] = {}
+        process_data: dict[str, Iterable[str]] = {}
         if isinstance(module_id, str) and processdata_id is None:
             process_data[module_id] = []
         elif isinstance(module_id, str) and isinstance(processdata_id, str):
@@ -201,7 +207,7 @@ class ExtendedApiClient(ApiClient):
             and hasattr(processdata_id, "__iter__")
         ):
             process_data[module_id] = list(processdata_id)
-        elif isinstance(module_id, dict) and processdata_id is None:
+        elif isinstance(module_id, Mapping) and processdata_id is None:
             process_data.update(module_id)
         else:
             raise TypeError("Invalid combination of module_id and processdata_id.")

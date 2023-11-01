@@ -14,6 +14,7 @@ import click
 from prompt_toolkit import PromptSession, print_formatted_text
 
 from pykoplenti import ApiClient
+from pykoplenti.extended import ExtendedApiClient
 
 
 class SessionCache:
@@ -152,7 +153,7 @@ class ApiShell:
 
 async def repl_main(host, port, passwd):
     async with ClientSession(timeout=ClientTimeout(total=10)) as session:
-        client = ApiClient(session, host=host, port=port)
+        client = ExtendedApiClient(session, host=host, port=port)
 
         shell = ApiShell(client)
         await shell.run(passwd)
@@ -162,7 +163,7 @@ async def command_main(
     host: str, port: int, passwd: str, fn: Callable[[ApiClient], Awaitable[Any]]
 ):
     async with ClientSession(timeout=ClientTimeout(total=10)) as session:
-        client = ApiClient(session, host=host, port=port)
+        client = ExtendedApiClient(session, host=host, port=port)
         session_cache = SessionCache(host)
 
         # Try to reuse an existing session
