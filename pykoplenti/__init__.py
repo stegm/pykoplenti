@@ -74,6 +74,12 @@ class ProcessDataCollection(Mapping):
         except StopIteration:
             raise KeyError(item)
 
+    def __eq__(self, __other: object) -> bool:
+        if not isinstance(__other, ProcessDataCollection):
+            return False
+
+        return self._process_data == __other._process_data
+
     def __str__(self):
         return "[" + ",".join(str(x) for x in self._process_data) + "]"
 
