@@ -8,14 +8,15 @@ This library is not affiliated with Kostal and is no offical product. It uses th
 
 ## Features
 
-* Authenticate
-* Read/Write settings
-* Read process data
-* Read events
-* Download of log data
-* Full async-Support for reading and writing data
-* Commandline interface for shell access
-* Dynamic data model
+- Authenticate
+- Read/Write settings
+- Read process data
+- Read events
+- Download of log data
+- Full async-Support for reading and writing data
+- Commandline interface for shell access
+- Dynamic data model
+- Virtual process data values
 
 ## Getting Started
 
@@ -25,12 +26,11 @@ You will need Python >=3.7.
 
 ### Installing the library
 
-Packages of this library are released on [PyPI](https://pypi.org/project/kostal-plenticore/) and can be 
-installed with `pip`. Alternatively the packages can also be downloaded from 
+Packages of this library are released on [PyPI](https://pypi.org/project/kostal-plenticore/) and can be
+installed with `pip`. Alternatively the packages can also be downloaded from
 [GitHub](https://github.com/stegm/pykoplenti/releases/).
 
-
-I recommend to use a [virtual environment](https://docs.python.org/3/library/venv.html) for this, 
+I recommend to use a [virtual environment](https://docs.python.org/3/library/venv.html) for this,
 because it installs the dependecies independently from the system. The installed CLI tools can then be called
 without activating the virtual environment it.
 
@@ -43,7 +43,6 @@ $ pip install pykoplenti
 ```
 
 ### Using the command line interface
-
 
 Installing the libray with `CLI` provides a new command.
 
@@ -72,7 +71,7 @@ Commands:
 ```
 
 Visit [Command Line Help](doc/command_line.md) for example usage.
- 
+
 ### Using the library from python
 
 The library is fully async, there for you need an async loop and an async `ClientSession`. Please refer to the
@@ -85,7 +84,7 @@ from pykoplenti import ApiClient
 ```
 
 To communicate with the inverter you need to instantiate the client:
- 
+
 ```python
 # session is a aiohttp ClientSession
 client = ApiClient(session, '192.168.1.100')
@@ -109,23 +108,22 @@ home_p = device_local['Home_P']
 
 See the full example here: [read_process_data.py](examples/read_process_data.py).
 
-If you should need installer access use the master key (printed on a label at the side of the inverter) 
+If you should need installer access use the master key (printed on a label at the side of the inverter)
 and additionally pass your service code:
 
 ```python
 await client.login(my_master_key, service_code=my_service_code)
 ```
 
-
 ## Documentation
 
-*  [Command Line Interface](doc/command_line.md)
-*  [Examples](examples/)
+- [Command Line Interface](doc/command_line.md)
+- [Examples](examples/)
 
 ## Built With
 
-* [AIOHTTPO](https://docs.aiohttp.org/en/stable/) - asyncio for HTTP
-* [click](https://click.palletsprojects.com/) - command line interface framework
+- [AIOHTTPO](https://docs.aiohttp.org/en/stable/) - asyncio for HTTP
+- [click](https://click.palletsprojects.com/) - command line interface framework
 
 ## License
 
@@ -133,7 +131,4 @@ apache-2.0
 
 ## Acknowledgments
 
-
-
-* [kilianknoll](https://github.com/kilianknoll) for the kostal-RESTAPI project 
- 
+- [kilianknoll](https://github.com/kilianknoll) for the kostal-RESTAPI project

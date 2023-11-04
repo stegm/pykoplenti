@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add installer authentication
+- Add a new class `pykoplenti.ExtendedApiClient` which provides virtual process ids for some common missing values.
 
 ## [1.0.0]
 
