@@ -1,12 +1,7 @@
 from datetime import datetime
-import os
-import re
-from typing import AsyncGenerator
 from unittest.mock import ANY, MagicMock
-import aiohttp
 
 import pytest
-import pytest_asyncio
 import pykoplenti
 import json
 from pydantic import parse_obj_as

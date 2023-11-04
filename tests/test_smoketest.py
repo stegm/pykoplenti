@@ -7,17 +7,17 @@ import aiohttp
 import pytest
 import pytest_asyncio
 
-import pykoplenti
+import pykoplenti.extended
 
 
 @pytest_asyncio.fixture
 async def authenticated_client() -> AsyncGenerator[pykoplenti.ApiClient, None]:
-    host = os.getenv("SMOKETEST_HOST")
-    port = int(os.getenv("SMOKETEST_PORT"))
-    password = os.getenv("SMOKETEST_PASS")
+    host = os.getenv("SMOKETEST_HOST", "localhost")
+    port = int(os.getenv("SMOKETEST_PORT", 80))
+    password = os.getenv("SMOKETEST_PASS", "")
 
     async with aiohttp.ClientSession() as session:
-        client = pykoplenti.ApiClient(session, host, port)
+        client = pykoplenti.extended.ExtendedApiClient(session, host, port)
         await client.login(password)
         yield client
         await client.logout()
@@ -65,7 +65,7 @@ class TestSmokeTests:
     async def test_smoketest_modules(self, authenticated_client: pykoplenti.ApiClient):
         """Retrieves the ModuleData."""
 
-        modules = await authenticated_client.get_modules()
+        modules = list(await authenticated_client.get_modules())
 
         assert len(modules) >= 17
         assert pykoplenti.ModuleData(id="devices:local", type="device") in modules
@@ -192,3 +192,27 @@ class TestSmokeTests:
         assert process_data["devices:local"]["Inverter:State"] is not None
         assert len(process_data["scb:export"]) == 1
         assert process_data["scb:export"]["PortalConActive"] is not None
+
+    @pytest.mark.asyncio
+    async def test_smoketest_read_all_process_values(
+        self, authenticated_client: pykoplenti.ApiClient
+    ):
+        """Try to read all process values and ensure no exception is thrown."""
+
+        process_data = await authenticated_client.get_process_data()
+
+        for module_id, processdata_ids in process_data.items():
+            processdata_values = await authenticated_client.get_process_data_values(
+                module_id, processdata_ids
+            )
+
+            assert len(processdata_values) == 1
+            assert module_id in processdata_values
+            assert set(processdata_ids) == set(processdata_values[module_id])
+            assert all(
+                isinstance(x.unit, str) for x in processdata_values[module_id].values()
+            )
+            assert all(
+                isinstance(x.value, float)
+                for x in processdata_values[module_id].values()
+            )
