@@ -7,7 +7,7 @@ import aiohttp
 import pytest
 import pytest_asyncio
 
-import pykoplenti.extended
+import pykoplenti
 
 
 @pytest_asyncio.fixture
@@ -17,7 +17,7 @@ async def authenticated_client() -> AsyncGenerator[pykoplenti.ApiClient, None]:
     password = os.getenv("SMOKETEST_PASS", "")
 
     async with aiohttp.ClientSession() as session:
-        client = pykoplenti.extended.ExtendedApiClient(session, host, port)
+        client = pykoplenti.ExtendedApiClient(session, host, port)
         await client.login(password)
         yield client
         await client.logout()
