@@ -2,7 +2,6 @@ from typing import Any, Callable
 import pytest
 
 import pykoplenti
-import pykoplenti.extended
 
 from unittest.mock import ANY, MagicMock, call
 
@@ -13,7 +12,7 @@ class TestVirtualProcessDataValuesDcSum:
     @pytest.mark.asyncio
     async def test_virtual_process_data(
         self,
-        pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+        pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
         client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
         websession: MagicMock,
     ):
@@ -43,7 +42,7 @@ class TestVirtualProcessDataValuesDcSum:
     @pytest.mark.asyncio
     async def test_virtual_process_data_value(
         self,
-        pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+        pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
         client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
         websession: MagicMock,
     ):
@@ -115,7 +114,7 @@ class TestVirtualProcessDataValuesEnergyToGrid:
     @pytest.mark.asyncio
     async def test_virtual_process_data(
         self,
-        pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+        pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
         client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
         websession: MagicMock,
         scope: str,
@@ -156,7 +155,7 @@ class TestVirtualProcessDataValuesEnergyToGrid:
     @pytest.mark.asyncio
     async def test_virtual_process_data_value(
         self,
-        pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+        pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
         client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
         websession: MagicMock,
         scope: str,
@@ -240,7 +239,7 @@ class TestVirtualProcessDataValuesEnergyToGrid:
 
 @pytest.mark.asyncio
 async def test_virtual_process_data_no_dc_sum(
-    pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+    pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
     client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
     websession: MagicMock,
 ):
@@ -268,7 +267,7 @@ async def test_virtual_process_data_no_dc_sum(
 
 @pytest.mark.asyncio
 async def test_virtual_process_data_and_normal_process_data(
-    pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+    pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
     client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
     websession: MagicMock,
 ):
@@ -333,7 +332,7 @@ async def test_virtual_process_data_and_normal_process_data(
 
 @pytest.mark.asyncio
 async def test_virtual_process_data_not_all_requested(
-    pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+    pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
     client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
     websession: MagicMock,
 ):
@@ -400,7 +399,7 @@ async def test_virtual_process_data_not_all_requested(
 
 @pytest.mark.asyncio
 async def test_virtual_process_data_multiple_requested(
-    pykoplenti_extended_client: pykoplenti.extended.ExtendedApiClient,
+    pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
     client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
     websession: MagicMock,
 ):
