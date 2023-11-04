@@ -216,3 +216,14 @@ class TestSmokeTests:
                 isinstance(x.value, float)
                 for x in processdata_values[module_id].values()
             )
+
+    @pytest.mark.asyncio
+    async def test_smoketest_read_events(
+        self, authenticated_client: pykoplenti.ApiClient
+    ):
+        """Try to read events from the inverter."""
+
+        events = await authenticated_client.get_events()
+
+        for event in events:
+            assert event.start_time < event.end_time

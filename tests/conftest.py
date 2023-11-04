@@ -26,7 +26,7 @@ def websession(websession_responses) -> MagicMock:
 @pytest.fixture
 def client_response_factory(
     websession_responses,
-) -> Callable[[int, list[Any] | dict[Any, Any]], MagicMock]:
+) -> Callable[[int, Any], MagicMock]:
     """Provides a factory to add responses to a ClientSession."""
 
     def factory(status: int = 200, json: list[Any] | dict[Any, Any] | None = None):
@@ -49,7 +49,7 @@ def pykoplenti_client(websession) -> pykoplenti.ApiClient:
     """
     client = pykoplenti.ApiClient(websession, "localhost")
     login_mock = AsyncMock()
-    client._login = login_mock
+    client._login = login_mock  # type: ignore
 
     return client
 
@@ -62,6 +62,6 @@ def pykoplenti_extended_client(websession) -> pykoplenti.extended.ExtendedApiCli
     """
     client = pykoplenti.extended.ExtendedApiClient(websession, "localhost")
     login_mock = AsyncMock()
-    client._login = login_mock
+    client._login = login_mock  # type: ignore
 
     return client
