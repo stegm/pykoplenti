@@ -1,8 +1,6 @@
 from base64 import b64decode, b64encode
-from collections import defaultdict
 from collections.abc import Mapping
 import contextlib
-from dataclasses import dataclass
 from datetime import datetime
 import functools
 import hashlib
@@ -10,7 +8,7 @@ import hmac
 import locale
 import logging
 from os import urandom
-from typing import IO, Dict, Iterable, Iterator, List, TypedDict, Union
+from typing import IO, Dict, Iterable, Iterator, List, Union
 import warnings
 
 from Crypto.Cipher import AES
@@ -65,7 +63,7 @@ class ProcessDataCollection(Mapping):
     def __len__(self) -> int:
         return len(self._process_data)
 
-    def __iter__(self) -> Iterator[ProcessData]:
+    def __iter__(self) -> Iterator[str]:
         return (x.id for x in self._process_data)
 
     def __getitem__(self, item) -> ProcessData:
@@ -339,12 +337,15 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         ).digest()
         stored_key = hashlib.sha256(client_key).digest()
 
-        auth_msg = "n={user},r={client_nonce},r={server_nonce},s={salt},i={rounds},c=biws,r={server_nonce}".format(
-            user=self._user,
-            client_nonce=b64encode(client_nonce).decode("utf-8"),
-            server_nonce=b64encode(server_nonce).decode("utf-8"),
-            salt=b64encode(salt).decode("utf-8"),
-            rounds=rounds,
+        auth_msg = (
+            "n={user},r={client_nonce},r={server_nonce},s={salt},i={rounds},"
+            "c=biws,r={server_nonce}".format(
+                user=self._user,
+                client_nonce=b64encode(client_nonce).decode("utf-8"),
+                server_nonce=b64encode(server_nonce).decode("utf-8"),
+                salt=b64encode(salt).decode("utf-8"),
+                rounds=rounds,
+            )
         )
         client_signature = hmac.new(
             stored_key, auth_msg.encode("utf-8"), hashlib.sha256
@@ -524,10 +525,10 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         ) as resp:
             await self._check_response(resp)
             event_response = await resp.json()
-            return [EventData(x) for x in event_response]
+            return [EventData(**x) for x in event_response]
 
     async def get_modules(self) -> Iterable[ModuleData]:
-        """Returns list of all available modules (providing process data or settings)."""
+        """Return list of all available modules (providing process data or settings)."""
         async with self._session_request("modules") as resp:
             await self._check_response(resp)
             modules_response = await resp.json()
@@ -535,7 +536,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
     @_relogin
     async def get_process_data(self) -> Dict[str, Iterable[str]]:
-        """Returns a dictionary of all processdata ids and its module ids.
+        """Return a dictionary of all processdata ids and its module ids.
 
         :return: a dictionary with the module id as key and a list of process data ids
                  as value
@@ -551,7 +552,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         module_id: Union[str, Dict[str, Iterable[str]]],
         processdata_id: Union[str, Iterable[str], None] = None,
     ) -> Dict[str, ProcessDataCollection]:
-        """Returns a dictionary of process data of one or more modules.
+        """Return a dictionary of process data of one or more modules.
 
         :param module_id: required, must be a module id or a dictionary with the
                           module id as key and the process data ids as values.
@@ -623,7 +624,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         raise TypeError("Invalid combination of module_id and processdata_id.")
 
     async def get_settings(self) -> Mapping[str, Iterable[SettingsData]]:
-        """Returns list of all modules with a list of available settings identifiers."""
+        """Return list of all modules with a list of available settings identifiers."""
         async with self._session_request("settings") as resp:
             await self._check_response(resp)
             response = await resp.json()
@@ -641,7 +642,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         module_id: Union[str, Mapping[str, Iterable[str]]],
         setting_id: Union[str, Iterable[str], None] = None,
     ) -> Mapping[str, Mapping[str, str]]:
-        """Returns a dictionary of setting values of one or more modules.
+        """Return a dictionary of setting values of one or more modules.
 
         :param module_id: required, must be a module id or a dictionary with the
                           module id as key and the setting ids as values.
@@ -697,7 +698,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
     @_relogin
     async def set_setting_values(self, module_id: str, values: Dict[str, str]):
-        """Writes a list of settings for one modules."""
+        """Write a list of settings for one modules."""
         request = [
             {
                 "moduleid": module_id,

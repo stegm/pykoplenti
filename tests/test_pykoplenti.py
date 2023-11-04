@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any, Callable
 from unittest.mock import ANY, MagicMock
 
 import pytest
@@ -48,14 +49,14 @@ def test_version_parsing():
 def test_event_parsing():
     raw_response = """\
     {
-        "description": "Reduction of AC power due to external command or high grid frequency.",
+        "description": "Reduction of AC power due to external command.",
         "category": "info",
         "is_active": false,
         "code": 5014,
         "end_time": "2023-04-29T00:45:19",
         "start_time": "2023-04-29T00:44:18",
         "group": "Information",
-        "long_description": "Reduction of AC power due to external command or high grid frequency."
+        "long_description": "Reduction of AC power due to external command."
     }"""
 
     event = pykoplenti.EventData(**json.loads(raw_response))
@@ -64,15 +65,9 @@ def test_event_parsing():
     assert event.end_time == datetime(2023, 4, 29, 0, 45, 19)
     assert event.is_active is False
     assert event.code == 5014
-    assert (
-        event.long_description
-        == "Reduction of AC power due to external command or high grid frequency."
-    )
+    assert event.long_description == "Reduction of AC power due to external command."
     assert event.category == "info"
-    assert (
-        event.description
-        == "Reduction of AC power due to external command or high grid frequency."
-    )
+    assert event.description == "Reduction of AC power due to external command."
     assert event.group == "Information"
 
 
@@ -172,20 +167,24 @@ def test_process_data_collection_can_be_iterated():
 
 @pytest.mark.asyncio
 async def test_relogin_on_401_response(
-    pykoplenti_client: pykoplenti.ApiClient, client_response_factory
+    pykoplenti_client: MagicMock,
+    client_response_factory: Callable[[int, Any], MagicMock],
 ):
     """Ensures that a re-login is executed if a 401 response was returned."""
 
     # First response returns 401
-    response1 = client_response_factory()
-    response1.status = 401
+    client_response_factory(401, None)
 
     # Second response is successfull
-    response2 = client_response_factory()
-    response2.status = 200
-    response2.json.return_value = [
-        {"moduleid": "moda", "processdata": [{"id": "procb", "unit": "", "value": 0}]}
-    ]
+    client_response_factory(
+        200,
+        [
+            {
+                "moduleid": "moda",
+                "processdata": [{"id": "procb", "unit": "", "value": 0}],
+            }
+        ],
+    )
 
     _ = await pykoplenti_client.get_process_data_values("moda", "procb")
 
@@ -194,8 +193,8 @@ async def test_relogin_on_401_response(
 
 @pytest.mark.asyncio
 async def test_process_data_value(
-    pykoplenti_client: pykoplenti.ApiClient,
-    client_response_factory,
+    pykoplenti_client: MagicMock,
+    client_response_factory: Callable[[int, Any], MagicMock],
     websession: MagicMock,
 ):
     """Test if process data values could be retrieved."""
@@ -233,9 +232,9 @@ async def test_process_data_value(
 
     assert values == {
         "devices:local:pv1": pykoplenti.ProcessDataCollection(
-            [pykoplenti.ProcessData(id="P", unit="W", value="700.0")]
+            [pykoplenti.ProcessData(id="P", unit="W", value=700.0)]
         ),
         "devices:local:pv2": pykoplenti.ProcessDataCollection(
-            [pykoplenti.ProcessData(id="P", unit="W", value="300.0")]
+            [pykoplenti.ProcessData(id="P", unit="W", value=300.0)]
         ),
     }

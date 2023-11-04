@@ -78,7 +78,8 @@ class ApiShell:
         # Test commands:
         # get_settings
         # get_setting_values 'devices:local' 'Battery:MinSoc'
-        # get_setting_values 'devices:local' ['Battery:MinSoc','Battery:MinHomeComsumption']
+        # get_setting_values 'devices:local' ['Battery:MinSoc', \
+        # 'Battery:MinHomeComsumption']
         # get_setting_values 'scb:time'
         # set_setting_values 'devices:local' {'Battery:MinSoc':'15'}
 
@@ -94,7 +95,8 @@ class ApiShell:
                 if text.strip() == "":
                     continue
                 else:
-                    # TODO split does not know about lists or dicts or strings with spaces
+                    # TODO split does not know about lists or dicts or strings
+                    # with spaces
                     method_name, *arg_values = text.strip().split()
 
                     if method_name == "help":
@@ -233,7 +235,8 @@ def read_events(global_args, lang, count):
         data = await client.get_events(lang=lang, max_count=count)
         for event in data:
             print(
-                f"{event.is_active < 5} {event.start_time} {event.end_time} {event.description}"
+                f"{event.is_active < 5} {event.start_time} {event.end_time} "
+                "{event.description}"
             )
 
     asyncio.run(
@@ -350,7 +353,8 @@ def read_settings(global_args, ids):
     \b
     Examples:
         read-settings devices:local/Battery:MinSoc
-        read-settings devices:local/Battery:MinSoc devices:local/Battery:MinHomeComsumption
+        read-settings devices:local/Battery:MinSoc \
+            devices:local/Battery:MinHomeComsumption
     """
 
     async def fn(client: ApiClient):
