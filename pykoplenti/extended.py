@@ -198,7 +198,7 @@ class ExtendedApiClient(ApiClient):
 
     async def get_process_data_values(
         self,
-        module_id: Union[str, dict[str, Iterable[str]]],
+        module_id: Union[str, Mapping[str, Iterable[str]]],
         processdata_id: Union[str, Iterable[str], None] = None,
     ) -> Mapping[str, ProcessDataCollection]:
         contains_virt_process_data = (

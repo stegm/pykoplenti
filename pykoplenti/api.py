@@ -8,7 +8,7 @@ import hmac
 import locale
 import logging
 from os import urandom
-from typing import IO, Dict, Final, Iterable, List, Union
+from typing import IO, Dict, Final, Iterable, List, Union, overload
 import warnings
 
 from Crypto.Cipher import AES
@@ -450,7 +450,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             return [ModuleData(**x) for x in modules_response]
 
     @_relogin
-    async def get_process_data(self) -> Dict[str, Iterable[str]]:
+    async def get_process_data(self) -> Mapping[str, Iterable[str]]:
         """Return a dictionary of all processdata ids and its module ids.
 
         :return: a dictionary with the module id as key and a list of process data ids
@@ -461,15 +461,53 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             data_response = await resp.json()
             return {x["moduleid"]: x["processdataids"] for x in data_response}
 
+    @overload
+    async def get_process_data_values(
+        self,
+        module_id: str,
+        processdata_id: str,
+    ) -> Mapping[str, ProcessDataCollection]:
+        ...
+
+    @overload
+    async def get_process_data_values(
+        self,
+        module_id: str,
+        processdata_id: Iterable[str],
+    ) -> Mapping[str, ProcessDataCollection]:
+        ...
+
+    @overload
+    async def get_process_data_values(
+        self,
+        module_id: str,
+    ) -> Mapping[str, ProcessDataCollection]:
+        ...
+
+    @overload
+    async def get_process_data_values(
+        self,
+        module_id: Mapping[str, Iterable[str]],
+    ) -> Mapping[str, ProcessDataCollection]:
+        ...
+
+    @overload
+    async def get_process_data_values(
+        self,
+        module_id: Union[str, Mapping[str, Iterable[str]]],
+        processdata_id: Union[str, Iterable[str], None] = None,
+    ) -> Mapping[str, ProcessDataCollection]:
+        ...
+
     @_relogin
     async def get_process_data_values(
         self,
-        module_id: Union[str, Dict[str, Iterable[str]]],
+        module_id: Union[str, Mapping[str, Iterable[str]]],
         processdata_id: Union[str, Iterable[str], None] = None,
-    ) -> Dict[str, ProcessDataCollection]:
+    ) -> Mapping[str, ProcessDataCollection]:
         """Return a dictionary of process data of one or more modules.
 
-        :param module_id: required, must be a module id or a dictionary with the
+        :param module_id: required, must be a module id or a mapping with the
                           module id as key and the process data ids as values.
         :param processdata_id: optional, if given `module_id` must be string. Can
                                be either a string or a list of string. If missing
@@ -617,7 +655,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         raise TypeError("Invalid combination of module_id and setting_id.")
 
     @_relogin
-    async def set_setting_values(self, module_id: str, values: Dict[str, str]):
+    async def set_setting_values(self, module_id: str, values: Mapping[str, str]):
         """Write a list of settings for one modules."""
         request = [
             {
