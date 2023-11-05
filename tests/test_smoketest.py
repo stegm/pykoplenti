@@ -127,7 +127,7 @@ class TestSmokeTests:
         """Retrieves the setting value with variante 3."""
 
         setting_value = await authenticated_client.get_setting_values(
-            "devices:local", None
+            "devices:local"
         )
 
         assert (

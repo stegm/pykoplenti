@@ -593,6 +593,36 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
             return result
 
+    @overload
+    async def get_setting_values(
+        self,
+        module_id: str,
+        setting_id: str,
+    ) -> Mapping[str, Mapping[str, str]]:
+        ...
+
+    @overload
+    async def get_setting_values(
+        self,
+        module_id: str,
+        setting_id: Iterable[str],
+    ) -> Mapping[str, Mapping[str, str]]:
+        ...
+
+    @overload
+    async def get_setting_values(
+        self,
+        module_id: str,
+    ) -> Mapping[str, Mapping[str, str]]:
+        ...
+
+    @overload
+    async def get_setting_values(
+        self,
+        module_id: Mapping[str, Iterable[str]],
+    ) -> Mapping[str, Mapping[str, str]]:
+        ...
+
     @_relogin
     async def get_setting_values(
         self,
