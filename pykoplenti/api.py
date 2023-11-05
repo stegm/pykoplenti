@@ -639,7 +639,13 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             # get multiple process data of multiple modules
             request = []
             for mid, pids in module_id.items():
-                request.append(dict(moduleid=mid, settingids=pids))
+                # the json encoder expects that iterables are either list or tuples,
+                # other types has to be converted
+                if isinstance(pids, list) or isinstance(pids, tuple):
+                    request.append(dict(moduleid=mid, settingids=pids))
+                else:
+                    request.append(dict(moduleid=mid, settingids=list(pids)))
+
 
             async with self._session_request(
                 "settings", method="POST", json=request
