@@ -1,9 +1,10 @@
-import pytest
-from unittest.mock import MagicMock, AsyncMock
-from aiohttp import ClientResponse, ClientSession
 from typing import Any, Callable
+from unittest.mock import AsyncMock, MagicMock
+
+from aiohttp import ClientResponse, ClientSession
+import pytest
+
 import pykoplenti
-import pykoplenti.extended
 
 
 @pytest.fixture
@@ -55,12 +56,12 @@ def pykoplenti_client(websession) -> pykoplenti.ApiClient:
 
 
 @pytest.fixture
-def pykoplenti_extended_client(websession) -> pykoplenti.extended.ExtendedApiClient:
+def pykoplenti_extended_client(websession) -> pykoplenti.ExtendedApiClient:
     """Returns a pykoplenti Extended API-Client.
 
     The _login method is replaced with an AsyncMock.
     """
-    client = pykoplenti.extended.ExtendedApiClient(websession, "localhost")
+    client = pykoplenti.ExtendedApiClient(websession, "localhost")
     login_mock = AsyncMock()
     client._login = login_mock  # type: ignore
 

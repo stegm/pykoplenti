@@ -1,7 +1,9 @@
 import asyncio
-from aiohttp import ClientSession
-from pykoplenti import ApiClient
 import sys
+
+from aiohttp import ClientSession
+
+from pykoplenti import ApiClient
 
 """
 Provides a simple example which reads two process data from the plenticore.

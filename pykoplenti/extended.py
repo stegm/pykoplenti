@@ -5,8 +5,8 @@ from collections import ChainMap, defaultdict
 from typing import Final, Iterable, Literal, Mapping, MutableMapping, Union
 
 from aiohttp import ClientSession
-from pykoplenti import ApiClient, ProcessData, ProcessDataCollection
 
+from .api import ApiClient, ProcessData, ProcessDataCollection
 
 _VIRT_MODUL_ID: Final = "_virt_"
 

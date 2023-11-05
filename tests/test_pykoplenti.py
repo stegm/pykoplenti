@@ -1,11 +1,12 @@
 from datetime import datetime
+import json
 from typing import Any, Callable
 from unittest.mock import ANY, MagicMock
 
-import pytest
-import pykoplenti
-import json
 from pydantic import parse_obj_as
+import pytest
+
+import pykoplenti
 
 
 def test_me_parsing():

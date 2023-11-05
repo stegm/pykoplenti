@@ -1,9 +1,9 @@
 from typing import Any, Callable, Iterable
+from unittest.mock import ANY, MagicMock, call
+
 import pytest
 
 import pykoplenti
-
-from unittest.mock import ANY, MagicMock, call
 
 
 class _IterableMatcher:
