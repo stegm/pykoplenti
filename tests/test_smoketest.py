@@ -59,8 +59,8 @@ class TestSmokeTests:
         # version info are highly variable hence only some basic checks are performed
         assert len(version.hostname) > 0
         assert len(version.name) > 0
-        assert re.match("\d+.\d+.\d+", version.api_version) is not None
-        assert re.match("\d+.\d+.\d+", version.sw_version) is not None
+        assert re.match(r"\d+.\d+.\d+", version.api_version) is not None
+        assert re.match(r"\d+.\d+.\d+", version.sw_version) is not None
 
     @pytest.mark.asyncio
     async def test_smoketest_modules(self, authenticated_client: pykoplenti.ApiClient):
