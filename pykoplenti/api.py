@@ -17,13 +17,13 @@ from pydantic import parse_obj_as
 from yarl import URL
 
 from .model import (
+    EventData,
     MeData,
-    VersionData,
     ModuleData,
     ProcessData,
     ProcessDataCollection,
     SettingsData,
-    EventData,
+    VersionData,
 )
 
 _logger: Final = logging.getLogger(__name__)

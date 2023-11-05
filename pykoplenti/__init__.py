@@ -1,24 +1,22 @@
+from .api import (
+    ApiClient,
+    ApiException,
+    AuthenticationException,
+    InternalCommunicationException,
+    ModuleNotFoundException,
+    NotAuthorizedException,
+    UserLockedException,
+)
+from .extended import ExtendedApiClient
 from .model import (
+    EventData,
     MeData,
-    VersionData,
     ModuleData,
     ProcessData,
     ProcessDataCollection,
     SettingsData,
-    EventData,
+    VersionData,
 )
-from .api import (
-    ApiException,
-    InternalCommunicationException,
-    AuthenticationException,
-    NotAuthorizedException,
-    UserLockedException,
-    ModuleNotFoundException,
-    ApiClient,
-)
-
-from .extended import ExtendedApiClient
-
 
 __all__ = [
     "MeData",
