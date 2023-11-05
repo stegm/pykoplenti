@@ -13,15 +13,14 @@ import warnings
 
 from Crypto.Cipher import AES
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
-from pydantic import parse_obj_as
 from yarl import URL
 
 from .model import (
     EventData,
     MeData,
     ModuleData,
-    ProcessData,
     ProcessDataCollection,
+    ProcessDataListTypeAdapter,
     SettingsData,
     VersionData,
 )
@@ -523,7 +522,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     data_response[0]["moduleid"]: ProcessDataCollection(
-                        parse_obj_as(list[ProcessData], data_response[0]["processdata"])
+                        ProcessDataListTypeAdapter.validate_python(data_response[0]["processdata"])
                     )
                 }
 
@@ -536,7 +535,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     data_response[0]["moduleid"]: ProcessDataCollection(
-                        parse_obj_as(list[ProcessData], data_response[0]["processdata"])
+                        ProcessDataListTypeAdapter.validate_python(data_response[0]["processdata"])
                     )
                 }
 
@@ -552,7 +551,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     data_response[0]["moduleid"]: ProcessDataCollection(
-                        parse_obj_as(list[ProcessData], data_response[0]["processdata"])
+                        ProcessDataListTypeAdapter.validate_python(data_response[0]["processdata"])
                     )
                 }
 
@@ -574,7 +573,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     x["moduleid"]: ProcessDataCollection(
-                        parse_obj_as(List[ProcessData], x["processdata"])
+                        ProcessDataListTypeAdapter.validate_python(x["processdata"])
                     )
                     for x in data_response
                 }
