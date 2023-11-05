@@ -22,10 +22,13 @@ jobs:
           pipenv install --dev
       - name: Lint with ruff
         run: |
-          pipenv run ruff .
+          pipenv run ruff --output-format=github .
       - name: Type check with mypy
         run: |
           pipenv run mypy pykoplenti/ tests/
+      - name: Test with pytest
+        run: |
+          pipenv run pytest --junitxml=junit/test-results.xml --cov pykoplenti --cov-report=xml --cov-report=html
       - name: Build package
         run: |
           pipenv run build
