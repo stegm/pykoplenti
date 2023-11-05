@@ -1,9 +1,36 @@
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 import pytest
 
 import pykoplenti
 
 from unittest.mock import ANY, MagicMock, call
+
+
+class _IterableMatcher:
+    """Matcher for iterable which does not check the order."""
+
+    def __init__(self, expected: Iterable):
+        self._expected = list(expected)
+
+    def __eq__(self, other: object) -> bool:
+        if not hasattr(other, "__iter__"):
+            return False
+
+        # check if every item in expected matched an item in other
+        expected = self._expected.copy()
+        for item in other:
+            if (idx := expected.index(item)) >= 0:
+                del expected[idx]
+            else:
+                return False
+
+        return len(expected) == 0
+
+    def __str__(self) -> str:
+        return str(self._expected)
+
+    def __repr__(self) -> str:
+        return repr(self._expected)
 
 
 class TestVirtualProcessDataValuesDcSum:
@@ -214,11 +241,13 @@ class TestVirtualProcessDataValuesEnergyToGrid:
                     json=[
                         {
                             "moduleid": "scb:statistic:EnergyFlow",
-                            "processdataids": [
-                                f"Statistic:Yield:{scope}",
-                                f"Statistic:EnergyHomeBat:{scope}",
-                                f"Statistic:EnergyHomePv:{scope}",
-                            ],
+                            "processdataids": _IterableMatcher(
+                                {
+                                    f"Statistic:Yield:{scope}",
+                                    f"Statistic:EnergyHomeBat:{scope}",
+                                    f"Statistic:EnergyHomePv:{scope}",
+                                }
+                            ),
                         },
                     ],
                 ),
@@ -468,18 +497,22 @@ async def test_virtual_process_data_multiple_requested(
                 "POST",
                 ANY,
                 headers=ANY,
-                json=[
-                    {"moduleid": "devices:local:pv1", "processdataids": ["P"]},
-                    {"moduleid": "devices:local:pv2", "processdataids": ["P"]},
-                    {
-                        "moduleid": "scb:statistic:EnergyFlow",
-                        "processdataids": [
-                            "Statistic:Yield:Total",
-                            "Statistic:EnergyHomeBat:Total",
-                            "Statistic:EnergyHomePv:Total",
-                        ],
-                    },
-                ],
+                json=_IterableMatcher(
+                    [
+                        {"moduleid": "devices:local:pv1", "processdataids": ["P"]},
+                        {"moduleid": "devices:local:pv2", "processdataids": ["P"]},
+                        {
+                            "moduleid": "scb:statistic:EnergyFlow",
+                            "processdataids": _IterableMatcher(
+                                {
+                                    "Statistic:Yield:Total",
+                                    "Statistic:EnergyHomeBat:Total",
+                                    "Statistic:EnergyHomePv:Total",
+                                }
+                            ),
+                        },
+                    ]
+                ),
             ),
         ],
         any_order=True,
