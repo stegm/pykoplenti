@@ -1,3 +1,5 @@
+"""Extended ApiClient which provides virtual process data values."""
+
 from abc import ABC, abstractmethod
 from collections import ChainMap, defaultdict
 from typing import Final, Iterable, Literal, Mapping, MutableMapping, Union
@@ -10,18 +12,25 @@ _VIRT_MODUL_ID: Final = "_virt_"
 
 
 class _VirtProcessDataItemBase(ABC):
-    def __init__(self, processid: str, process_data: dict[str, list[str]]) -> None:
+    """Base class for all virtual process data items."""
+
+    def __init__(self, processid: str, process_data: dict[str, set[str]]) -> None:
         self.processid = processid
         self.process_data = process_data
-        self.available_process_data: dict[str, list[str]] = defaultdict(list)
+        self.available_process_data: dict[str, set[str]] = {}
 
-    def update_actual_process_ids(self, data: Mapping[str, Iterable[str]]):
+    def update_actual_process_ids(
+        self, available_process_ids: Mapping[str, Iterable[str]]
+    ):
+        """Update which process data for this item are available."""
         self.available_process_data.clear()
-        for mid, pids in self.process_data.items():
-            if mid in data:
-                for pid in pids:
-                    if pid in data[mid]:
-                        self.available_process_data[mid].append(pid)
+        for module_id, process_ids in self.process_data.items():
+            if module_id in available_process_ids:
+                matching_process_ids = process_ids.intersection(
+                    available_process_ids[module_id]
+                )
+                if len(matching_process_ids) > 0:
+                    self.available_process_data[module_id] = matching_process_ids
 
     @abstractmethod
     def get_value(
@@ -38,10 +47,9 @@ class _VirtProcessDataItemSum(_VirtProcessDataItemBase):
     def get_value(
         self, process_values: Mapping[str, ProcessDataCollection]
     ) -> ProcessData:
-        values = []
-        for mid, pids in self.available_process_data.items():
-            for pid in pids:
-                values.append(process_values[mid][pid].value)
+        values: list[float] = []
+        for module_id, process_ids in self.available_process_data.items():
+            values += (process_values[module_id][pid].value for pid in process_ids)
 
         return ProcessData(id=self.processid, unit="W", value=sum(values))
 
@@ -56,11 +64,11 @@ class _VirtProcessDataItemEnergyToGrid(_VirtProcessDataItemBase):
         super().__init__(
             processid,
             {
-                "scb:statistic:EnergyFlow": [
+                "scb:statistic:EnergyFlow": {
                     f"Statistic:Yield:{scope}",
                     f"Statistic:EnergyHomeBat:{scope}",
                     f"Statistic:EnergyHomePv:{scope}",
-                ]
+                }
             },
         )
         self.scope = scope
@@ -80,18 +88,20 @@ class _VirtProcessDataItemEnergyToGrid(_VirtProcessDataItemBase):
         )
 
     def is_available(self) -> bool:
-        return len(self.available_process_data) == len(self.process_data)
+        return self.available_process_data == self.process_data
 
 
 class _VirtProcessDataManager:
+    """Manager for all virtual process data items."""
+
     def __init__(self) -> None:
         self._virt_process_data: Iterable[_VirtProcessDataItemBase] = [
             _VirtProcessDataItemSum(
                 "pv_P",
                 {
-                    "devices:local:pv1": ["P"],
-                    "devices:local:pv2": ["P"],
-                    "devices:local:pv3": ["P"],
+                    "devices:local:pv1": {"P"},
+                    "devices:local:pv2": {"P"},
+                    "devices:local:pv3": {"P"},
                 },
             ),
             _VirtProcessDataItemEnergyToGrid("Statistic:EnergyGrid:Total", "Total"),
@@ -100,13 +110,15 @@ class _VirtProcessDataManager:
             _VirtProcessDataItemEnergyToGrid("Statistic:EnergyGrid:Day", "Day"),
         ]
 
-    def initialize(self, data: Mapping[str, Iterable[str]]):
+    def initialize(self, available_process_data: Mapping[str, Iterable[str]]):
+        """Initialize the virtual items with the list of available process ids."""
         for vpd in self._virt_process_data:
-            vpd.update_actual_process_ids(data)
+            vpd.update_actual_process_ids(available_process_data)
 
-    def adapt_data_response(
+    def adapt_process_data_response(
         self, process_data: dict[str, list[str]]
     ) -> Mapping[str, list[str]]:
+        """Adapt the reponse of reading process data."""
         virt_process_data: dict[str, list[str]] = {_VIRT_MODUL_ID: []}
 
         for vpd in self._virt_process_data:
@@ -115,13 +127,14 @@ class _VirtProcessDataManager:
 
         return ChainMap(process_data, virt_process_data)
 
-    def adapt_value_request(
+    def adapt_process_value_request(
         self, process_data: Mapping[str, Iterable[str]]
     ) -> Mapping[str, Iterable[str]]:
-        result: MutableMapping[str, list[str]] = defaultdict(list)
+        """Adapt the request for process values."""
+        result: MutableMapping[str, set[str]] = defaultdict(set)
 
         for mid, pids in process_data.items():
-            result[mid].extend(pids)
+            result[mid].update(pids)
 
         for requested_virtual_process_id in result.pop(_VIRT_MODUL_ID):
             for virtual_process_data in self._virt_process_data:
@@ -132,10 +145,7 @@ class _VirtProcessDataManager:
                             mid,
                             pids,
                         ) in virtual_process_data.available_process_data.items():
-                            ids = result[mid]
-                            for pid in pids:
-                                if pid not in ids:
-                                    ids.append(pid)
+                            result[mid].update(pids)
                         break
             else:
                 raise ValueError(
@@ -144,11 +154,12 @@ class _VirtProcessDataManager:
 
         return result
 
-    def adapt_value_response(
+    def adapt_process_value_response(
         self,
         values: Mapping[str, ProcessDataCollection],
         request_data: Mapping[str, Iterable[str]],
     ) -> Mapping[str, ProcessDataCollection]:
+        """Adapt the reponse for process values."""
         result = {}
 
         # add virtual items
@@ -159,17 +170,19 @@ class _VirtProcessDataManager:
                     virtual_process_data_values.append(vpd.get_value(values))
         result["_virt_"] = ProcessDataCollection(virtual_process_data_values)
 
-        # remove all values which was not requested
+        # add all values which was requested but not the extra ids for the virtual ids
         for mid, pdc in values.items():
             if mid in request_data:
                 pids = [x for x in pdc.values() if x.id in request_data[mid]]
-                if len(pids):
+                if len(pids) > 0:
                     result[mid] = ProcessDataCollection(pids)
 
         return result
 
 
 class ExtendedApiClient(ApiClient):
+    """Extend ApiClient with virtual process data."""
+
     def __init__(self, websession: ClientSession, host: str, port: int = 80):
         super().__init__(websession, host, port)
 
@@ -181,7 +194,7 @@ class ExtendedApiClient(ApiClient):
 
         self._virt_process_data.initialize(process_data)
         self._virt_process_data_initialized = True
-        return self._virt_process_data.adapt_data_response(process_data)
+        return self._virt_process_data.adapt_process_data_response(process_data)
 
     async def get_process_data_values(
         self,
@@ -218,8 +231,8 @@ class ExtendedApiClient(ApiClient):
             self._virt_process_data_initialized = True
 
         process_values = await super().get_process_data_values(
-            self._virt_process_data.adapt_value_request(process_data)
+            self._virt_process_data.adapt_process_value_request(process_data)
         )
-        return self._virt_process_data.adapt_value_response(
+        return self._virt_process_data.adapt_process_value_response(
             process_values, process_data
         )
