@@ -23,7 +23,7 @@ jobs:
       - name: Lint with ruff
         run: |
           pipenv run ruff .
-      - name: Lint with ruff
+      - name: Type check with mypy
         run: |
           pipenv run mypy pykoplenti/ tests/
       - name: Build package
