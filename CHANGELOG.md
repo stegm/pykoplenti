@@ -5,15 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [1.2.0]
 
 ### Changed
 
-- all models are now based on pydantic
+- All models are now based on pydantic - interface is still the same.
+- Code is refactored into separate modules - imports are still provided by using `import pykoplenti`
 
 ### Fixed
 
-- 401 response triggers now an automatic re-login
+- If a request is anwered with 401, an automatic re-login is triggered (like this was already the case for 400 response).
+
+### Added
+
+- A new api client `ExtendedApiClient` was added which provides virtual process data values. See [Virtual Process Data](doc/virtual_process_data.md) for details.
+- Package provide type hints via `py.typed`.
 
 ## [1.1.0]
 
