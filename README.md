@@ -14,9 +14,9 @@ This library is not affiliated with Kostal and is no offical product. It uses th
 - Read events
 - Download of log data
 - Full async-Support for reading and writing data
-- Commandline interface for shell access
-- Dynamic data model
-- Virtual process data values
+- [Commandline interface](doc/command_line.md) for shell access
+- Dynamic data model - adapts automatically to new process data or settings
+- [Virtual Process Data](doc/virtual_process_data.md) values
 
 ## Getting Started
 
@@ -119,11 +119,17 @@ await client.login(my_master_key, service_code=my_service_code)
 
 - [Command Line Interface](doc/command_line.md)
 - [Examples](examples/)
+- [Virtual Process Data](doc/virtual_process_data.md)
 
 ## Built With
 
 - [AIOHTTPO](https://docs.aiohttp.org/en/stable/) - asyncio for HTTP
 - [click](https://click.palletsprojects.com/) - command line interface framework
+- [black](https://github.com/psf/black) - Python code formatter
+- [ruff](https://github.com/astral-sh/ruff) - Python linter
+- [pytest](https://docs.pytest.org/) - Python test framework
+- [mypy](https://mypy-lang.org/) - Python type checker
+- [setuptools](https://github.com/pypa/setuptools) - Python packager
 
 ## License
 
