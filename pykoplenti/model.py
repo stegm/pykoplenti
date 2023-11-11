@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Iterator, Mapping
 
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field
 
 
 class MeData(BaseModel):
@@ -38,7 +38,6 @@ class ProcessData(BaseModel):
     unit: str
     value: float
 
-ProcessDataListTypeAdapter = TypeAdapter(list[ProcessData])
 
 class ProcessDataCollection(Mapping):
     """Represents a collection of process data value."""
