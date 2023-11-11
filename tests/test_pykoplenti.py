@@ -3,10 +3,10 @@ import json
 from typing import Any, Callable
 from unittest.mock import ANY, MagicMock
 
+from pydantic import parse_obj_as
 import pytest
 
 import pykoplenti
-from pykoplenti.model import ProcessDataListTypeAdapter
 
 
 def test_me_parsing():
@@ -129,7 +129,7 @@ def test_process_data_collection_indicates_length():
         '{"id": "Statistic:Yield:Month", "unit": "", "value": 2}]'
     )
     pdc = pykoplenti.ProcessDataCollection(
-        ProcessDataListTypeAdapter.validate_python(json.loads(raw_response))
+        parse_obj_as(list[pykoplenti.ProcessData], json.loads(raw_response))
     )
 
     assert len(pdc) == 2
@@ -141,7 +141,7 @@ def test_process_data_collection_index_returns_processdata():
         '{"id": "Statistic:Yield:Month", "unit": "", "value": 2}]'
     )
     pdc = pykoplenti.ProcessDataCollection(
-        ProcessDataListTypeAdapter.validate_python(json.loads(raw_response))
+        parse_obj_as(list[pykoplenti.ProcessData], json.loads(raw_response))
     )
 
     result = pdc["Statistic:Yield:Month"]
@@ -158,7 +158,7 @@ def test_process_data_collection_can_be_iterated():
         '{"id": "Statistic:Yield:Month", "unit": "", "value": 2}]'
     )
     pdc = pykoplenti.ProcessDataCollection(
-        ProcessDataListTypeAdapter.validate_python(json.loads(raw_response))
+        parse_obj_as(list[pykoplenti.ProcessData], json.loads(raw_response))
     )
 
     result = list(pdc)
