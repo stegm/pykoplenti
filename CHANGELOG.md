@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.1]
+## [1.2.2]
 
 ## Changed
 
-- Downgrade pydantic to 1.x (Dependcy to Home Assistant).
+- Loosen version for required package aiohttp (Dependency to Home Assistant).
+
+## [1.2.1]
+
+### Changed
+
+- Downgrade pydantic to 1.x (Dependency to Home Assistant).
 
 ## [1.2.0]
 
