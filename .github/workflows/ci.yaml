@@ -29,6 +29,9 @@ jobs:
       - name: Test with pytest
         run: |
           pipenv run pytest --junitxml=junit/test-results.xml --cov pykoplenti --cov-report=xml --cov-report=html
+      - name: Test with tox
+        run: |
+          pipenv run tox
       - name: Build package
         run: |
           pipenv run build
