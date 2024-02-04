@@ -13,7 +13,6 @@ import warnings
 
 from Crypto.Cipher import AES
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
-from pydantic import parse_obj_as
 from yarl import URL
 
 from .model import (
@@ -24,6 +23,7 @@ from .model import (
     ProcessDataCollection,
     SettingsData,
     VersionData,
+    process_data_list,
 )
 
 _logger: Final = logging.getLogger(__name__)
@@ -523,7 +523,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     data_response[0]["moduleid"]: ProcessDataCollection(
-                        parse_obj_as(list[ProcessData], data_response[0]["processdata"])
+                        process_data_list(data_response[0]["processdata"])
                     )
                 }
 
@@ -536,7 +536,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     data_response[0]["moduleid"]: ProcessDataCollection(
-                        parse_obj_as(list[ProcessData], data_response[0]["processdata"])
+                        process_data_list(data_response[0]["processdata"])
                     )
                 }
 
@@ -552,7 +552,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     data_response[0]["moduleid"]: ProcessDataCollection(
-                        parse_obj_as(list[ProcessData], data_response[0]["processdata"])
+                        process_data_list(data_response[0]["processdata"])
                     )
                 }
 
@@ -574,7 +574,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {
                     x["moduleid"]: ProcessDataCollection(
-                        parse_obj_as(List[ProcessData], x["processdata"])
+                        process_data_list(x["processdata"])
                     )
                     for x in data_response
                 }
@@ -676,7 +676,6 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                     request.append(dict(moduleid=mid, settingids=pids))
                 else:
                     request.append(dict(moduleid=mid, settingids=list(pids)))
-
 
             async with self._session_request(
                 "settings", method="POST", json=request
