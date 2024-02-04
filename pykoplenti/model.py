@@ -100,16 +100,22 @@ class EventData(BaseModel):
     is_active: bool
 
 
+# pydantic version specific code
+# In pydantic 2.x `parse_obj_as` is no longer supported. To stay compatible to
+# both version a small wrapper function is used.
+
 if pydantic.VERSION.startswith("2."):
     from pydantic import TypeAdapter
 
     _process_list_adapter: Final = TypeAdapter(list[ProcessData])
 
     def process_data_list(json) -> list[ProcessData]:
+        """Process json as a list of ProcessData objects."""
         return _process_list_adapter.validate_python(json)
 
 else:
     from pydantic import parse_obj_as
 
     def process_data_list(json) -> list[ProcessData]:
+        """Process json as a list of ProcessData objects."""
         return parse_obj_as(list[ProcessData], json)
