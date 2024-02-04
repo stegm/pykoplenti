@@ -19,7 +19,6 @@ from .model import (
     EventData,
     MeData,
     ModuleData,
-    ProcessData,
     ProcessDataCollection,
     SettingsData,
     VersionData,
@@ -265,7 +264,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         client_signature = hmac.new(
             stored_key, auth_msg.encode("utf-8"), hashlib.sha256
         ).digest()
-        client_proof = bytes([a ^ b for a, b in zip(client_key, client_signature)])
+        client_proof = bytes(a ^ b for a, b in zip(client_key, client_signature))
 
         server_key = hmac.new(
             salted_passwd, "Server Key".encode("utf-8"), hashlib.sha256
@@ -343,30 +342,32 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         """Check if the given response contains an error and throws
         the appropriate exception."""
 
-        if resp.status != 200:
-            try:
-                response = await resp.json()
-                error = response["message"]
-            except Exception:
-                error = None
+        if resp.status == 200:
+            return
 
-            if resp.status == 400:
-                raise AuthenticationException(resp.status, error)
+        try:
+            response = await resp.json()
+            error = response["message"]
+        except Exception:
+            error = None
 
-            if resp.status == 401:
-                raise NotAuthorizedException(resp.status, error)
+        if resp.status == 400:
+            raise AuthenticationException(resp.status, error)
 
-            if resp.status == 403:
-                raise UserLockedException(resp.status, error)
+        if resp.status == 401:
+            raise NotAuthorizedException(resp.status, error)
 
-            if resp.status == 404:
-                raise ModuleNotFoundException(resp.status, error)
+        if resp.status == 403:
+            raise UserLockedException(resp.status, error)
 
-            if resp.status == 503:
-                raise InternalCommunicationException(resp.status, error)
+        if resp.status == 404:
+            raise ModuleNotFoundException(resp.status, error)
 
-            # we got an undocumented status code
-            raise ApiException(f"Unknown API response [{resp.status}] - {error}")
+        if resp.status == 503:
+            raise InternalCommunicationException(resp.status, error)
+
+        # we got an undocumented status code
+        raise ApiException(f"Unknown API response [{resp.status}] - {error}")
 
     @staticmethod
     def _relogin(fn):
@@ -374,11 +375,8 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
         @functools.wraps(fn)
         async def _wrapper(self, *args, **kwargs):
-            try:
+            with contextlib.suppress(AuthenticationException, NotAuthorizedException):
                 return await fn(self, *args, **kwargs)
-            except (AuthenticationException, NotAuthorizedException):
-                pass
-
             _logger.debug("Request failed - try to re-login")
             await self._login()
             return await fn(self, *args, **kwargs)
@@ -422,7 +420,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         if lang is None:
             lang = locale.getlocale()[0]
 
-        language = lang[0:2].lower()
+        language = lang[:2].lower()
         variant = lang[3:5].lower()
         if language not in ApiClient.SUPPORTED_LANGUAGES.keys():
             # Fallback to default
@@ -466,38 +464,33 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         self,
         module_id: str,
         processdata_id: str,
-    ) -> Mapping[str, ProcessDataCollection]:
-        ...
+    ) -> Mapping[str, ProcessDataCollection]: ...
 
     @overload
     async def get_process_data_values(
         self,
         module_id: str,
         processdata_id: Iterable[str],
-    ) -> Mapping[str, ProcessDataCollection]:
-        ...
+    ) -> Mapping[str, ProcessDataCollection]: ...
 
     @overload
     async def get_process_data_values(
         self,
         module_id: str,
-    ) -> Mapping[str, ProcessDataCollection]:
-        ...
+    ) -> Mapping[str, ProcessDataCollection]: ...
 
     @overload
     async def get_process_data_values(
         self,
         module_id: Mapping[str, Iterable[str]],
-    ) -> Mapping[str, ProcessDataCollection]:
-        ...
+    ) -> Mapping[str, ProcessDataCollection]: ...
 
     @overload
     async def get_process_data_values(
         self,
         module_id: Union[str, Mapping[str, Iterable[str]]],
         processdata_id: Union[str, Iterable[str], None] = None,
-    ) -> Mapping[str, ProcessDataCollection]:
-        ...
+    ) -> Mapping[str, ProcessDataCollection]: ...
 
     @_relogin
     async def get_process_data_values(
@@ -562,7 +555,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             for mid, pids in module_id.items():
                 # the json encoder expects that iterables are either list or tuples,
                 # other types has to be converted
-                if isinstance(pids, list) or isinstance(pids, tuple):
+                if isinstance(pids, (list, tuple)):
                     request.append(dict(moduleid=mid, processdataids=pids))
                 else:
                     request.append(dict(moduleid=mid, processdataids=list(pids)))
@@ -588,9 +581,9 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             response = await resp.json()
             result: Dict[str, List[SettingsData]] = {}
             for module in response:
-                id = module["moduleid"]
-                data = list([SettingsData(**x) for x in module["settings"]])
-                result[id] = data
+                mid = module["moduleid"]
+                data = [SettingsData(**x) for x in module["settings"]]
+                result[mid] = data
 
             return result
 
@@ -599,30 +592,26 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         self,
         module_id: str,
         setting_id: str,
-    ) -> Mapping[str, Mapping[str, str]]:
-        ...
+    ) -> Mapping[str, Mapping[str, str]]: ...
 
     @overload
     async def get_setting_values(
         self,
         module_id: str,
         setting_id: Iterable[str],
-    ) -> Mapping[str, Mapping[str, str]]:
-        ...
+    ) -> Mapping[str, Mapping[str, str]]: ...
 
     @overload
     async def get_setting_values(
         self,
         module_id: str,
-    ) -> Mapping[str, Mapping[str, str]]:
-        ...
+    ) -> Mapping[str, Mapping[str, str]]: ...
 
     @overload
     async def get_setting_values(
         self,
         module_id: Mapping[str, Iterable[str]],
-    ) -> Mapping[str, Mapping[str, str]]:
-        ...
+    ) -> Mapping[str, Mapping[str, str]]: ...
 
     @_relogin
     async def get_setting_values(
@@ -672,7 +661,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             for mid, pids in module_id.items():
                 # the json encoder expects that iterables are either list or tuples,
                 # other types has to be converted
-                if isinstance(pids, list) or isinstance(pids, tuple):
+                if isinstance(pids, (list, tuple)):
                     request.append(dict(moduleid=mid, settingids=pids))
                 else:
                     request.append(dict(moduleid=mid, settingids=list(pids)))
@@ -695,7 +684,7 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         request = [
             {
                 "moduleid": module_id,
-                "settings": list([dict(value=v, id=k) for k, v in values.items()]),
+                "settings": [dict(value=v, id=k) for k, v in values.items()],
             }
         ]
         async with self._session_request(

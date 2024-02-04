@@ -56,7 +56,7 @@ class ProcessDataCollection(Mapping):
         try:
             return next(x for x in self._process_data if x.id == item)
         except StopIteration:
-            raise KeyError(item)
+            raise KeyError(item) from None
 
     def __eq__(self, __other: object) -> bool:
         if not isinstance(__other, ProcessDataCollection):
