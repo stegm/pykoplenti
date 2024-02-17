@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import Iterator, Mapping
+from typing import Final, Iterator, Mapping
 
+import pydantic
 from pydantic import BaseModel, Field
 
 
@@ -55,7 +56,7 @@ class ProcessDataCollection(Mapping):
         try:
             return next(x for x in self._process_data if x.id == item)
         except StopIteration:
-            raise KeyError(item)
+            raise KeyError(item) from None
 
     def __eq__(self, __other: object) -> bool:
         if not isinstance(__other, ProcessDataCollection):
@@ -97,3 +98,24 @@ class EventData(BaseModel):
     description: str
     group: str
     is_active: bool
+
+
+# pydantic version specific code
+# In pydantic 2.x `parse_obj_as` is no longer supported. To stay compatible to
+# both version a small wrapper function is used.
+
+if pydantic.VERSION.startswith("2."):
+    from pydantic import TypeAdapter
+
+    _process_list_adapter: Final = TypeAdapter(list[ProcessData])
+
+    def process_data_list(json) -> list[ProcessData]:
+        """Process json as a list of ProcessData objects."""
+        return _process_list_adapter.validate_python(json)
+
+else:
+    from pydantic import parse_obj_as
+
+    def process_data_list(json) -> list[ProcessData]:
+        """Process json as a list of ProcessData objects."""
+        return parse_obj_as(list[ProcessData], json)

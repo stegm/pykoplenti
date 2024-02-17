@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.10", "3.11"]
 
     steps:
       - uses: actions/checkout@v2
@@ -29,6 +29,9 @@ jobs:
       - name: Test with pytest
         run: |
           pipenv run pytest --junitxml=junit/test-results.xml --cov pykoplenti --cov-report=xml --cov-report=html
+      - name: Test with tox
+        run: |
+          pipenv run tox
       - name: Build package
         run: |
           pipenv run build
