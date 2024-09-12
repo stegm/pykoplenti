@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Final, Iterator, Mapping
+from typing import Final, Iterator, Mapping, Optional
 
 import pydantic
 from pydantic import BaseModel, Field
@@ -78,11 +78,11 @@ class ProcessDataCollection(Mapping):
 class SettingsData(BaseModel):
     """Represents a single settings data."""
 
-    min: str | None
-    max: str | None
-    default: str | None
+    min: Optional[str]
+    max: Optional[str]
+    default: Optional[str]
     access: str
-    unit: str | None
+    unit: Optional[str]
     id: str
     type: str
 

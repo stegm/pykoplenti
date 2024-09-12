@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Union
 from unittest.mock import AsyncMock, MagicMock
 
 from aiohttp import ClientResponse, ClientSession
@@ -30,7 +30,7 @@ def client_response_factory(
 ) -> Callable[[int, Any], MagicMock]:
     """Provides a factory to add responses to a ClientSession."""
 
-    def factory(status: int = 200, json: list[Any] | dict[Any, Any] | None = None):
+    def factory(status: int = 200, json: Union[list[Any], dict[Any, Any], None] = None):
         response = MagicMock(spec_set=ClientResponse, name="request Mock")
         response.status = status
         if json is not None:
