@@ -25,8 +25,17 @@ tox
 
 Available environments:
 
+* `py39-pydantic1` - Python 3.9 with Pydantic 1.x
+* `py39-pydantic2` - Python 3.9 with Pydantic 2.x
 * `py310-pydantic1` - Python 3.10 with Pydantic 1.x
 * `py310-pydantic2` - Python 3.10 with Pydantic 2.x
+* `py311-pydantic1` - Python 3.11 with Pydantic 1.x
+* `py311-pydantic2` - Python 3.11 with Pydantic 2.x
+* `py312-pydantic1` - Python 3.12 with Pydantic 1.x
+* `py312-pydantic2` - Python 3.12 with Pydantic 2.x
+
+If `tox` should use `pyenv`, the package `tox-pyenv-redux` must be installed manually.
+It cannot be installed in pipenv dev, because it is incompatible with github actions.
 
 ## Running smoke tests
 

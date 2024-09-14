@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Union
 from unittest.mock import ANY, MagicMock, call
 
 import pytest
@@ -40,7 +40,9 @@ class TestVirtualProcessDataValuesDcSum:
     async def test_virtual_process_data(
         self,
         pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
-        client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+        client_response_factory: Callable[
+            [int, Union[list[Any], dict[Any, Any]]], MagicMock
+        ],
         websession: MagicMock,
     ):
         """Test virtual process data for PV power if depencies are present."""
@@ -70,7 +72,9 @@ class TestVirtualProcessDataValuesDcSum:
     async def test_virtual_process_data_value(
         self,
         pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
-        client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+        client_response_factory: Callable[
+            [int, Union[list[Any], dict[Any, Any]]], MagicMock
+        ],
         websession: MagicMock,
     ):
         """Test virtual process data for PV power."""
@@ -142,7 +146,9 @@ class TestVirtualProcessDataValuesEnergyToGrid:
     async def test_virtual_process_data(
         self,
         pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
-        client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+        client_response_factory: Callable[
+            [int, Union[list[Any], dict[Any, Any]]], MagicMock
+        ],
         websession: MagicMock,
         scope: str,
     ):
@@ -183,7 +189,9 @@ class TestVirtualProcessDataValuesEnergyToGrid:
     async def test_virtual_process_data_value(
         self,
         pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
-        client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+        client_response_factory: Callable[
+            [int, Union[list[Any], dict[Any, Any]]], MagicMock
+        ],
         websession: MagicMock,
         scope: str,
     ):
@@ -269,10 +277,12 @@ class TestVirtualProcessDataValuesEnergyToGrid:
 @pytest.mark.asyncio
 async def test_virtual_process_data_no_dc_sum(
     pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
-    client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+    client_response_factory: Callable[
+        [int, Union[list[Any], dict[Any, Any]]], MagicMock
+    ],
     websession: MagicMock,
 ):
-    """Test if no virtual process data is present if dependecies are missing."""
+    """Test if no virtual process data is present if dependencies are missing."""
     client_response_factory(
         200,
         [
@@ -297,7 +307,9 @@ async def test_virtual_process_data_no_dc_sum(
 @pytest.mark.asyncio
 async def test_virtual_process_data_and_normal_process_data(
     pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
-    client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+    client_response_factory: Callable[
+        [int, Union[list[Any], dict[Any, Any]]], MagicMock
+    ],
     websession: MagicMock,
 ):
     """Test if virtual and non-virtual process values can be requested."""
@@ -362,7 +374,9 @@ async def test_virtual_process_data_and_normal_process_data(
 @pytest.mark.asyncio
 async def test_virtual_process_data_not_all_requested(
     pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
-    client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+    client_response_factory: Callable[
+        [int, Union[list[Any], dict[Any, Any]]], MagicMock
+    ],
     websession: MagicMock,
 ):
     """Test if not all available virtual process data are requested."""
@@ -429,7 +443,9 @@ async def test_virtual_process_data_not_all_requested(
 @pytest.mark.asyncio
 async def test_virtual_process_data_multiple_requested(
     pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
-    client_response_factory: Callable[[int, list[Any] | dict[Any, Any]], MagicMock],
+    client_response_factory: Callable[
+        [int, Union[list[Any], dict[Any, Any]]], MagicMock
+    ],
     websession: MagicMock,
 ):
     """Test if multiple virtual process data are requested."""

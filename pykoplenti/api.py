@@ -85,6 +85,20 @@ class ModuleNotFoundException(ApiException):
         self.error = error
 
 
+def _relogin(fn):
+    """Decorator for automatic re-login if session was expired."""
+
+    @functools.wraps(fn)
+    async def _wrapper(self: "ApiClient", *args, **kwargs):
+        with contextlib.suppress(AuthenticationException, NotAuthorizedException):
+            return await fn(self, *args, **kwargs)
+        _logger.debug("Request failed - try to re-login")
+        await self._login()
+        return await fn(self, *args, **kwargs)
+
+    return _wrapper
+
+
 class ApiClient(contextlib.AbstractAsyncContextManager):
     """Client for the REST-API of Kostal Plenticore inverters.
 
@@ -368,20 +382,6 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
 
         # we got an undocumented status code
         raise ApiException(f"Unknown API response [{resp.status}] - {error}")
-
-    @staticmethod
-    def _relogin(fn):
-        """Decorator for automatic re-login if session was expired."""
-
-        @functools.wraps(fn)
-        async def _wrapper(self, *args, **kwargs):
-            with contextlib.suppress(AuthenticationException, NotAuthorizedException):
-                return await fn(self, *args, **kwargs)
-            _logger.debug("Request failed - try to re-login")
-            await self._login()
-            return await fn(self, *args, **kwargs)
-
-        return _wrapper
 
     async def logout(self):
         """Logs the current user out."""
