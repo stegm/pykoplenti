@@ -236,7 +236,7 @@ def read_events(global_args, lang, count):
         for event in data:
             print(
                 f"{event.is_active < 5} {event.start_time} {event.end_time} "
-                "{event.description}"
+                f"{event.description}"
             )
 
     asyncio.run(
