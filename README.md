@@ -128,9 +128,11 @@ await client.login(my_master_key, service_code=my_service_code)
 - [click](https://click.palletsprojects.com/) - command line interface framework
 - [black](https://github.com/psf/black) - Python code formatter
 - [ruff](https://github.com/astral-sh/ruff) - Python linter
+- [pydantic](https://docs.pydantic.dev/latest/) - Data validation library
 - [pytest](https://docs.pytest.org/) - Python test framework
 - [mypy](https://mypy-lang.org/) - Python type checker
 - [setuptools](https://github.com/pypa/setuptools) - Python packager
+- [tox](https://tox.wiki) - Automate testing
 
 ## License
 

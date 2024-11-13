@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0]
+
+## Changed
+
+- Added support for pydantic 2.x (>=2.0.0) while maintaining compatibility
+  with pydantic 1.x (>=1.9.0).
+- Dropped support for Python 3.8 and added 3.11/3.12.
+
+## Fixed
+
+- Fixed error in cli for printing events.
+
 ## [1.2.2]
 
 ## Changed
