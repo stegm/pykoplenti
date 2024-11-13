@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Changed
 
-- Added support for pydantic 2. Pydantic 1 is still supported.
+- Added support for pydantic 2.x (>=2.0.0) while maintaining compatibility
+  with pydantic 1.x (>=1.9.0).
 - Dropped support for Python 3.8 and added 3.11/3.12.
 
 ## Fixed
