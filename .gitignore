@@ -4,6 +4,7 @@ __pycache__
 *.egg-info
 build/
 dist/
+.tox/
 pip-wheel-metadata/
 .env.local
 coverage.xml
