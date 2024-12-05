@@ -59,7 +59,7 @@ class ApiShell:
         session_id = self._session_cache.read_session_id()
         if session_id is not None:
             self.client.session_id = session_id
-            print_formatted_text("Trying to reuse existing session... ", end=None)
+            print_formatted_text("Trying to reuse existing session... ", end="")
             me = await self.client.get_me()
             if me.is_authenticated:
                 print_formatted_text("Success")
@@ -68,9 +68,10 @@ class ApiShell:
             print_formatted_text("Failed")
 
         if key is not None:
-            print_formatted_text("Logging in... ", end=None)
+            print_formatted_text("Logging in... ", end="")
             await self.client.login(key=key, service_code=service_code)
-            self._session_cache.write_session_id(self.client.session_id)
+            if self.client.session_id is not None:
+                self._session_cache.write_session_id(self.client.session_id)
             print_formatted_text("Success")
         else:
             print_formatted_text("Session could not be reused and no key given")
@@ -80,7 +81,7 @@ class ApiShell:
         print_formatted_text(traceback.format_exc())
 
     async def run(self, key: Optional[str], service_code: Optional[str]):
-        session = PromptSession()
+        session = PromptSession[str]()
         print_formatted_text(flush=True)  # Initialize output
 
         # Test commands:
