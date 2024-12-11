@@ -7,8 +7,8 @@ from conftest import only_smoketest
 
 
 @pytest.fixture
-def credentials(tmp_path: Path):
-    password = os.getenv("SMOKETEST_PASS", "")
+def credentials(tmp_path: Path, smoketest_config: tuple[str, int, str]):
+    _, _, password = smoketest_config
     credentials_path = tmp_path / "credentials"
     credentials_path.write_text(f"password={password}")
     return credentials_path
@@ -22,8 +22,8 @@ def dummy_credentials(tmp_path: Path):
 
 
 @pytest.fixture
-def session_cache():
-    host = os.getenv("SMOKETEST_HOST", "localhost")
+def session_cache(smoketest_config: tuple[str, int, str]):
+    host, _, _ = smoketest_config
     session_cache = SessionCache(host, "user")
     session_cache.remove()
     yield session_cache
@@ -90,14 +90,18 @@ class TestInvalidGlobalOptions:
 
 
 @only_smoketest
-def test_read_process_data(credentials: Path, session_cache: SessionCache):
+def test_read_process_data(
+    credentials: Path,
+    session_cache: SessionCache,
+    smoketest_config: tuple[str, int, str],
+):
     # As --password-file has a default value, this ensures
     # that no default password-file exists.
     os.chdir(credentials.parent)
 
+    host, port, _ = smoketest_config
+
     runner = CliRunner()
-    host = os.getenv("SMOKETEST_HOST", "localhost")  # noqa: F821
-    port = int(os.getenv("SMOKETEST_PORT", 80))
     result = runner.invoke(
         cli,
         [

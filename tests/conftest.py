@@ -71,3 +71,13 @@ def pykoplenti_extended_client(websession) -> pykoplenti.ExtendedApiClient:
     client._login = login_mock  # type: ignore
 
     return client
+
+
+@pytest.fixture
+def smoketest_config() -> tuple[str, int, str]:
+    """Return the configuration for smoke tests."""
+    return (
+        os.getenv("SMOKETEST_HOST", "localhost"),
+        int(os.getenv("SMOKETEST_PORT", 80)),
+        os.getenv("SMOKETEST_PASS", ""),
+    )
