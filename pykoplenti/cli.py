@@ -358,14 +358,20 @@ def read_events(global_args: GlobalArgs, lang, count):
 @click.option("--begin", type=click.DateTime(["%Y-%m-%d"]), help="first day to export")
 @click.option("--end", type=click.DateTime(["%Y-%m-%d"]), help="last day to export")
 @pass_global_args
-def download_log(global_args, out, begin, end):
+def download_log(global_args: GlobalArgs, out, begin, end):
     """Download the log data from the inverter to a file."""
 
     async def fn(client: ApiClient):
         await client.download_logdata(writer=out, begin=begin, end=end)
 
     asyncio.run(
-        command_main(global_args.host, global_args.port, global_args.passwd, fn)
+        command_main(
+            global_args.host,
+            global_args.port,
+            global_args.key,
+            global_args.service_code,
+            fn,
+        )
     )
 
 
@@ -394,7 +400,7 @@ def all_processdata(global_args: GlobalArgs):
 @cli.command()
 @click.argument("ids", required=True, nargs=-1)
 @pass_global_args
-def read_processdata(global_args, ids):
+def read_processdata(global_args: GlobalArgs, ids):
     """Returns the values of the given process data.
 
     IDS is the identifier (<module_id>/<processdata_id>) of one or more processdata
@@ -428,7 +434,13 @@ def read_processdata(global_args, ids):
                 print(f"{k}/{x.id}={x.value}")
 
     asyncio.run(
-        command_main(global_args.host, global_args.port, global_args.passwd, fn)
+        command_main(
+            global_args.host,
+            global_args.port,
+            global_args.key,
+            global_args.service_code,
+            fn,
+        )
     )
 
 
@@ -437,7 +449,7 @@ def read_processdata(global_args, ids):
     "--rw", is_flag=True, default=False, help="display only writable settings"
 )
 @pass_global_args
-def all_settings(global_args, rw):
+def all_settings(global_args: GlobalArgs, rw: bool):
     """Returns the ids of all settings."""
 
     async def fn(client: ApiClient):
@@ -448,14 +460,20 @@ def all_settings(global_args, rw):
                     print(f"{k}/{x.id}")
 
     asyncio.run(
-        command_main(global_args.host, global_args.port, global_args.passwd, fn)
+        command_main(
+            global_args.host,
+            global_args.port,
+            global_args.key,
+            global_args.service_code,
+            fn,
+        )
     )
 
 
 @cli.command()
 @click.argument("ids", required=True, nargs=-1)
 @pass_global_args
-def read_settings(global_args, ids):
+def read_settings(global_args: GlobalArgs, ids):
     """Read the value of the given settings.
 
     IDS is the identifier (<module_id>/<setting_id>) of one or more settings to read
@@ -486,14 +504,20 @@ def read_settings(global_args, ids):
                 print(f"{k}/{i}={v}")
 
     asyncio.run(
-        command_main(global_args.host, global_args.port, global_args.passwd, fn)
+        command_main(
+            global_args.host,
+            global_args.port,
+            global_args.key,
+            global_args.service_code,
+            fn,
+        )
     )
 
 
 @cli.command()
 @click.argument("id_values", required=True, nargs=-1)
 @pass_global_args
-def write_settings(global_args, id_values):
+def write_settings(global_args: GlobalArgs, id_values):
     """Write the values of the given settings.
 
     ID_VALUES is the identifier plus the the value to write
@@ -522,7 +546,13 @@ def write_settings(global_args, id_values):
             await client.set_setting_values(module_id, setting_values)
 
     asyncio.run(
-        command_main(global_args.host, global_args.port, global_args.passwd, fn)
+        command_main(
+            global_args.host,
+            global_args.port,
+            global_args.key,
+            global_args.service_code,
+            fn,
+        )
     )
 
 
