@@ -3,6 +3,7 @@ from click.testing import CliRunner
 import pytest
 from pykoplenti.cli import cli, SessionCache
 import os
+from conftest import only_smoketest
 
 
 @pytest.fixture
@@ -88,10 +89,12 @@ class TestInvalidGlobalOptions:
         assert "service_code cannot be used with credentials" in result.output
 
 
-@pytest.mark.skipif(
-    os.getenv("SMOKETEST_HOST") is None, reason="Smoketest must be explicitly executed"
-)
+@only_smoketest
 def test_read_process_data(credentials: Path, session_cache: SessionCache):
+    # As --password-file has a default value, this ensures
+    # that no default password-file exists.
+    os.chdir(credentials.parent)
+
     runner = CliRunner()
     host = os.getenv("SMOKETEST_HOST", "localhost")  # noqa: F821
     port = int(os.getenv("SMOKETEST_PORT", 80))

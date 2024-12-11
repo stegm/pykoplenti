@@ -1,3 +1,4 @@
+import os
 from typing import Any, Callable, Union
 from unittest.mock import AsyncMock, MagicMock
 
@@ -5,6 +6,10 @@ from aiohttp import ClientResponse, ClientSession
 import pytest
 
 import pykoplenti
+
+only_smoketest: pytest.MarkDecorator = pytest.mark.skipif(
+    os.getenv("SMOKETEST_HOST") is None, reason="Smoketest must be explicitly executed"
+)
 
 
 @pytest.fixture
