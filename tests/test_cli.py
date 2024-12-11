@@ -118,3 +118,34 @@ def test_read_process_data(
     # check any data which is most likely present on most inverter
     assert "devices:local/Inverter:State" in result.stdout.splitlines()
     assert session_cache.read_session_id() is not None
+
+
+@only_smoketest
+def test_read_settings_data(
+    credentials: Path,
+    session_cache: SessionCache,
+    smoketest_config: tuple[str, int, str],
+):
+    # As --password-file has a default value, this ensures
+    # that no default password-file exists.
+    os.chdir(credentials.parent)
+
+    host, port, _ = smoketest_config
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "--host",
+            host,
+            "--port",
+            str(port),
+            "--credentials",
+            str(credentials),
+            "all-settings",
+        ],
+    )
+    assert result.exit_code == 0
+    # check any data which is most likely present on most inverter
+    assert "devices:local/Branding:ProductName1" in result.stdout.splitlines()
+    assert session_cache.read_session_id() is not None
