@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [next]
+
+### Changed
+
+- The cli now supports installer authentication, see `--service-code` option
+- New credential file format for cli that supports password and service code
+
 ## [1.3.0]
 
 ## Changed

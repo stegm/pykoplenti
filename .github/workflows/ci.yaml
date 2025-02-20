@@ -19,7 +19,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install pipenv
-          pipenv install --dev
+          pipenv install --dev --python ${{ matrix.python-version }}
       - name: Lint with ruff
         run: |
           pipenv run ruff --output-format=github .
@@ -36,9 +36,9 @@ jobs:
         run: |
           pipenv run build
       - name: Upload packages to github
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: dist-${{ matrix.python-version }}
           path: dist/*
 
   deploy:

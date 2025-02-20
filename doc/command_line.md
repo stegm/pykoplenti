@@ -2,7 +2,22 @@
 
 ## Shell-Commands
 
-The hostname or ip of the plenticore inverter must be given as argument `--host`. The password might be given direct on the command line with the `--password` option or by file with `--password-file`. The later is default with the name `secrets` in the current directory.
+The hostname or IP of the Plenticore inverter must be given as argument `--host`. The password might be given direct on the command line with the `--password` option or by file with `--credentials` (`--password-file` is deprecated).
+
+The credentials file is a text file containing at least the following line:
+
+```
+password=<password>
+```
+
+If you want to use installer authentication instead, the file should contain two lines:
+
+```
+master-key=<master key>
+service-code=<service code>
+```
+
+Alternatively, `--password` and `--service-code` arguments can be used.
 
 After the first login a session id is created and saved in a temporary file. If the command is executed a second time, it is first checked if the session ID is still valid. If not, a new logon attempt is made.
 
