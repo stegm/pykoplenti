@@ -48,22 +48,28 @@ Installing the libray with `CLI` provides a new command.
 
 ```shell
 $ pykoplenti --help
-Usage: pykoplenti [OPTIONS] COMMAND [ARGS]...
+Usage: python -m pykoplenti.cli [OPTIONS] COMMAND [ARGS]...
 
   Handling of global arguments with click
 
 Options:
-  --host TEXT           hostname or ip of the inverter
-  --port INTEGER        port of the inverter (default 80)
-  --password TEXT       the password
-  --password-file TEXT  password file (default "secrets" in the current
-                        working directory)
-
+  --host TEXT           Hostname or IP of the inverter
+  --port INTEGER        Port of the inverter  [default: 80]
+  --password TEXT       Password or master key (also device id)
+  --service-code TEXT   service code for installer access
+  --password-file FILE  Path to password file - deprecated, use --credentials
+                        [default: secrets]
+  --credentials FILE    Path to the credentials file. This has a simple ini-
+                        format without sections. For user access, use the
+                        'password'. For installer access, use the 'master-key'
+                        and 'service-key'.
   --help                Show this message and exit.
 
 Commands:
   all-processdata   Returns a list of all available process data.
   all-settings      Returns the ids of all settings.
+  download-log      Download the log data from the inverter to a file.
+  read-events       Returns the last events
   read-processdata  Returns the values of the given process data.
   read-settings     Read the value of the given settings.
   repl              Provides a simple REPL for executing API requests to...
