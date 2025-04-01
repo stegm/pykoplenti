@@ -1,4 +1,5 @@
 /secrets
+/credentials*
 /venv
 __pycache__
 *.egg-info
