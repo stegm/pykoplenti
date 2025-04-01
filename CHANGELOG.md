@@ -5,14 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [next]
+## [1.4.0] - 2025-04-01
 
 ### Changed
 
 - The cli now supports installer authentication, see `--service-code` option
 - New credential file format for cli that supports password and service code
 
-## [1.3.0]
+## Deprecated
+
+- Option `--password-file` is now deprecated. Use `--credentials` instead.
+
+## [1.3.0] - 2024-11-13
 
 ## Changed
 
@@ -24,19 +28,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed error in cli for printing events.
 
-## [1.2.2]
+## [1.2.2] - 2023-11-12
 
 ## Changed
 
 - Loosen version for required package aiohttp (Dependency to Home Assistant).
 
-## [1.2.1]
+## [1.2.1] - 2023-11-11
 
 ### Changed
 
 - Downgrade pydantic to 1.x (Dependency to Home Assistant).
 
-## [1.2.0]
+## [1.2.0] - 2023-11-06
 
 ### Changed
 
@@ -59,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add installer authentication
 - Add a new class `pykoplenti.ExtendedApiClient` which provides virtual process ids for some common missing values.
 
-## [1.0.0]
+## [1.0.0] - 2021-05-04
 
 ### Fixed
 
