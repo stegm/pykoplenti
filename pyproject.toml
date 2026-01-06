@@ -45,8 +45,8 @@ repository = "https://github.com/stegm/pyclient_koplenti"
 changelog = "https://github.com/stegm/pykoplenti/blob/master/CHANGELOG.md"
 issues = "https://github.com/stegm/pykoplenti/issues"
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "black~=23.10",
     "isort~=5.12",
     "ruff~=0.14",
