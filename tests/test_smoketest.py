@@ -95,7 +95,7 @@ class TestSmokeTests:
     async def test_smoketest_setting_value1(
         self, authenticated_client: pykoplenti.ApiClient
     ):
-        """Retrieves the setting value with variante 1."""
+        """Retrieves the setting value with variant (str, str)."""
 
         setting_value = await authenticated_client.get_setting_values(
             "devices:local", "Branding:ProductName1"
@@ -109,7 +109,7 @@ class TestSmokeTests:
     async def test_smoketest_setting_value2(
         self, authenticated_client: pykoplenti.ApiClient
     ):
-        """Retrieves the setting value with variante 2."""
+        """Retrieves the setting value with variant (str, Iterable[str])."""
 
         setting_value = await authenticated_client.get_setting_values(
             "devices:local", ["Branding:ProductName1"]
@@ -124,7 +124,7 @@ class TestSmokeTests:
     async def test_smoketest_setting_value3(
         self, authenticated_client: pykoplenti.ApiClient
     ):
-        """Retrieves the setting value with variante 3."""
+        """Retrieves the setting value with variant (str, None)."""
 
         setting_value = await authenticated_client.get_setting_values(
             "devices:local"
@@ -138,7 +138,7 @@ class TestSmokeTests:
     async def test_smoketest_setting_value4(
         self, authenticated_client: pykoplenti.ApiClient
     ):
-        """Retrieves the setting value with variante 4."""
+        """Retrieves the setting value with variant (Mapping[str, Iterable[str]])."""
 
         setting_value = await authenticated_client.get_setting_values(
             {"devices:local": ["Branding:ProductName1"]}

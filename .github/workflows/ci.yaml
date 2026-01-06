@@ -22,7 +22,7 @@ jobs:
           pipenv install --dev --python ${{ matrix.python-version }}
       - name: Lint with ruff
         run: |
-          pipenv run ruff --output-format=github .
+          pipenv run ruff check --output-format=github .
       - name: Type check with mypy
         run: |
           pipenv run mypy pykoplenti/ tests/

@@ -649,11 +649,41 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             and hasattr(setting_id, "__iter__")
         ):
             # get multiple settings of a module
-            ids = ",".join(setting_id)
-            async with self._session_request(f"settings/{module_id}/{ids}") as resp:
+
+            # There was once an API version which explicitly supports a single module with
+            # multiple settings in one request. However this way seems to be not supported anymore
+            # and hence we use the same approach as for multiple modules.
+            # Known to work: Plenticore plus 10
+            # Known not to work: Plenticore plus 10 G2, Plenticore M G3
+            request = [
+                {
+                    "moduleid": module_id,
+                    "settingids": list(setting_id),
+                }
+            ]
+
+            async with self._session_request("settings", method="POST", json=request) as resp:
                 await self._check_response(resp)
                 data_response = await resp.json()
-                return {module_id: {x["id"]: x["value"] for x in data_response}}
+                # expected response looks like
+                # [
+                #   {
+                #       "moduleid": <id>,
+                #       "settings":
+                #       [
+                #           {
+                #               "id": <id>,
+                #               "value": <value>
+                #           },
+                #        ...
+                #       ]
+                #   },
+                #  ...
+                # ]
+                return {
+                    x["moduleid"]: {y["id"]: y["value"] for y in x["settings"]}
+                    for x in data_response
+                }
 
         if isinstance(module_id, dict) and setting_id is None:
             # get multiple process data of multiple modules
