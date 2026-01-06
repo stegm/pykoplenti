@@ -7,10 +7,10 @@ isort pykoplenti
 black --fast pykoplenti
 ```
 
-## Initialize developer environment with pipenv
+## Initialize developer environment with uv
 
 ```shell script
-pipenv sync --dev
+uv sync
 ```
 
 ## Run pytest using tox
@@ -35,13 +35,13 @@ Available environments:
 * `py312-pydantic2` - Python 3.12 with Pydantic 2.x
 
 If `tox` should use `pyenv`, the package `tox-pyenv-redux` must be installed manually.
-It cannot be installed in pipenv dev, because it is incompatible with github actions.
+It cannot be installed as a dev dependency because it is incompatible with github actions.
 
 ## Running smoke tests
 
 The test suite contains some smoke tests that connect directly to an inverter and attempt to retrieve data from it.
 These tests are normally disabled but can be enabled by setting some environment variables before running `pytest`.
-It is recommended to set these variables in `.env` where `pipenv` reads them before executing a command.
+It is recommended to set these variables in `.env` where `uv` reads them before executing a command.
 
 | Variable         | Description                                           |
 | ---------------- | ----------------------------------------------------- |

@@ -22,7 +22,7 @@ This library is not affiliated with Kostal and is no offical product. It uses th
 
 ### Prerequisites
 
-You will need Python >=3.7.
+You will need Python >=3.9.
 
 ### Installing the library
 
@@ -137,7 +137,7 @@ await client.login(my_master_key, service_code=my_service_code)
 - [pydantic](https://docs.pydantic.dev/latest/) - Data validation library
 - [pytest](https://docs.pytest.org/) - Python test framework
 - [mypy](https://mypy-lang.org/) - Python type checker
-- [setuptools](https://github.com/pypa/setuptools) - Python packager
+- [hatchling](https://hatch.pypa.io/) - Modern Python build backend
 - [tox](https://tox.wiki) - Automate testing
 
 ## License
