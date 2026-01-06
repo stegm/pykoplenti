@@ -665,6 +665,21 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             async with self._session_request("settings", method="POST", json=request) as resp:
                 await self._check_response(resp)
                 data_response = await resp.json()
+                # expected response looks like
+                # [
+                #   {
+                #       "moduleid": <id>,
+                #       "settings":
+                #       [
+                #           {
+                #               "id": <id>,
+                #               "value": <value>
+                #           },
+                #        ...
+                #       ]
+                #   },
+                #  ...
+                # ]
                 return {
                     x["moduleid"]: {y["id"]: y["value"] for y in x["settings"]}
                     for x in data_response
