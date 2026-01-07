@@ -41,7 +41,7 @@ cli = [
 pykoplenti = "pykoplenti.cli:cli"
 
 [project.urls]
-repository = "https://github.com/stegm/pyclient_koplenti"
+repository = "https://github.com/stegm/pykoplenti"
 changelog = "https://github.com/stegm/pykoplenti/blob/master/CHANGELOG.md"
 issues = "https://github.com/stegm/pykoplenti/issues"
 
