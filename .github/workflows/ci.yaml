@@ -17,24 +17,21 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install uv
         uses: astral-sh/setup-uv@v4
-      - name: Install dependencies
-        run: |
-          uv sync --extra cli --python ${{ matrix.python-version }}
       - name: Lint with ruff
         run: |
-          uv run ruff check --output-format=github .
+          uv run --python ${{ matrix.python-version }} ruff check --output-format=github .
       - name: Type check with mypy
         run: |
-          uv run mypy pykoplenti/ tests/
+          uv run --extra cli --python ${{ matrix.python-version }} mypy pykoplenti/ tests/
       - name: Test with pytest
         run: |
-          uv run pytest --junitxml=junit/test-results.xml --cov pykoplenti --cov-report=xml --cov-report=html
+          uv run --extra cli --python ${{ matrix.python-version }} pytest --junitxml=junit/test-results.xml --cov pykoplenti --cov-report=xml --cov-report=html
       - name: Test with tox
         run: |
-          uv run tox
+          uv run --extra cli --python ${{ matrix.python-version }} tox
       - name: Build package
         run: |
-          uv build
+          uv build --python ${{ matrix.python-version }}
       - name: Upload packages to github
         uses: actions/upload-artifact@v4
         with:
@@ -57,11 +54,8 @@ jobs:
           python-version: "3.10"
       - name: Install uv
         uses: astral-sh/setup-uv@v4
-      - name: Install dependencies
-        run: |
-          uv sync --extra cli
       - name: Build package
         run: |
-          uv build
+          uv build --python 3.10
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
