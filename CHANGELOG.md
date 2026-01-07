@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
-- `get_settings_values` return an API 500 error incase the overload variant `(str, Iterable[str])`
+- `get_settings_values` returns an API 500 error in case the overload variant `(str, Iterable[str])`
   was used on newer models (like Plenticore plus G2).
 
 ## Internally
