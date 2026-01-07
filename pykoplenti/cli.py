@@ -7,14 +7,25 @@ import os
 from pathlib import Path
 from pprint import pprint
 import re
+import sys
 import tempfile
 import traceback
 from typing import Any, Awaitable, Callable, Dict, Optional, Union
 import warnings
 
 from aiohttp import ClientSession, ClientTimeout
-import click
-from prompt_toolkit import PromptSession, print_formatted_text
+
+# Check for CLI dependencies
+try:
+    import click
+    from prompt_toolkit import PromptSession, print_formatted_text
+except ImportError:
+    print(
+        "Error: CLI dependencies are not installed.\n"
+        "Please install them with: pip install pykoplenti[cli]",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 from pykoplenti import ApiClient
 from pykoplenti.extended import ExtendedApiClient

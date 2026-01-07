@@ -22,7 +22,7 @@ This library is not affiliated with Kostal and is no offical product. It uses th
 
 ### Prerequisites
 
-You will need Python >=3.7.
+You will need Python >=3.9.
 
 ### Installing the library
 
@@ -36,15 +36,15 @@ without activating the virtual environment it.
 
 ```shell
 # Install with command line support
-$ pip install pykoplenti[CLI]
+$ pip install pykoplenti[cli]
 
-# Install without command line support
+# Install without command line support (library only)
 $ pip install pykoplenti
 ```
 
 ### Using the command line interface
 
-Installing the libray with `CLI` provides a new command.
+After installing with CLI support, you can use the command:
 
 ```shell
 $ pykoplenti --help
@@ -137,7 +137,7 @@ await client.login(my_master_key, service_code=my_service_code)
 - [pydantic](https://docs.pydantic.dev/latest/) - Data validation library
 - [pytest](https://docs.pytest.org/) - Python test framework
 - [mypy](https://mypy-lang.org/) - Python type checker
-- [setuptools](https://github.com/pypa/setuptools) - Python packager
+- [hatchling](https://hatch.pypa.io/) - Modern Python build backend
 - [tox](https://tox.wiki) - Automate testing
 
 ## License
