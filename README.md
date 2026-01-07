@@ -36,15 +36,15 @@ without activating the virtual environment it.
 
 ```shell
 # Install with command line support
-$ pip install pykoplenti[CLI]
+$ pip install pykoplenti[cli]
 
-# Install without command line support
+# Install without command line support (library only)
 $ pip install pykoplenti
 ```
 
 ### Using the command line interface
 
-Installing the libray with `CLI` provides a new command.
+After installing with CLI support, you can use the command:
 
 ```shell
 $ pykoplenti --help
