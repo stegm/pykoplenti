@@ -19,16 +19,16 @@ jobs:
         uses: astral-sh/setup-uv@v4
       - name: Lint with ruff
         run: |
-          uv run --python ${{ matrix.python-version }} ruff check --output-format=github .
+          uv run --group dev --python ${{ matrix.python-version }} ruff check --output-format=github .
       - name: Type check with mypy
         run: |
-          uv run --extra cli --python ${{ matrix.python-version }} mypy pykoplenti/ tests/
+          uv run --group dev --extra cli --python ${{ matrix.python-version }} mypy pykoplenti/ tests/
       - name: Test with pytest
         run: |
-          uv run --extra cli --python ${{ matrix.python-version }} pytest --junitxml=junit/test-results.xml --cov pykoplenti --cov-report=xml --cov-report=html
+          uv run --group dev --extra cli --python ${{ matrix.python-version }} pytest --junitxml=junit/test-results.xml --cov pykoplenti --cov-report=xml --cov-report=html
       - name: Test with tox
         run: |
-          uv run --extra cli --python ${{ matrix.python-version }} tox
+          uv run --group dev --extra cli --python ${{ matrix.python-version }} tox
       - name: Build package
         run: |
           uv build --python ${{ matrix.python-version }}
