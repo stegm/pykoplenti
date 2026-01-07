@@ -35,7 +35,7 @@ Available environments:
 * `py312-pydantic2` - Python 3.12 with Pydantic 2.x
 
 If `tox` should use `pyenv`, the package `tox-pyenv-redux` must be installed manually.
-It cannot be installed as a dev dependency because it is incompatible with github actions.
+It cannot be installed as a dev dependency because it is incompatible with GitHub Actions.
 
 ## Running smoke tests
 
