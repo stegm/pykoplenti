@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pykoplenti"
-version = "1.5.0rc1"
+version = "1.5.0"
 description = "Python REST-Client for Kostal Plenticore Solar Inverters"
 readme = "README.md"
 requires-python = ">=3.9"
