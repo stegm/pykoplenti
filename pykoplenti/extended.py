@@ -36,12 +36,10 @@ class _VirtProcessDataItemBase(ABC):
     @abstractmethod
     def get_value(
         self, process_values: Mapping[str, ProcessDataCollection]
-    ) -> ProcessData:
-        ...
+    ) -> ProcessData: ...
 
     @abstractmethod
-    def is_available(self) -> bool:
-        ...
+    def is_available(self) -> bool: ...
 
 
 class _VirtProcessDataItemSum(_VirtProcessDataItemBase):
