@@ -4,6 +4,8 @@
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "ruff.organizeImports": true,
+  "mypy-type-checker.importStrategy": "fromEnvironment",
+  "mypy-type-checker.reportingScope": "workspace",
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "ruff.format.backend": "uv",
