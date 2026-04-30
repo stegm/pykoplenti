@@ -1444,7 +1444,7 @@ wheels = [
 
 [[package]]
 name = "pykoplenti"
-version = "1.4.0"
+version = "1.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1481,7 +1481,7 @@ requires-dist = [
     { name = "click", marker = "extra == 'cli'", specifier = ">=8.0" },
     { name = "prompt-toolkit", marker = "extra == 'cli'", specifier = ">=3.0" },
     { name = "pycryptodome", specifier = "~=3.19" },
-    { name = "pydantic", specifier = ">=1.10" },
+    { name = "pydantic", specifier = ">=1.10,<3" },
 ]
 
 [package.metadata.requires-dev]
@@ -1493,7 +1493,7 @@ dev = [
     { name = "pytest", specifier = "~=7.4" },
     { name = "pytest-asyncio", specifier = "~=0.21" },
     { name = "pytest-cov", specifier = "~=4.1" },
-    { name = "ruff", specifier = "~=0.14" },
+    { name = "ruff", specifier = "~=0.14.0" },
     { name = "tox", specifier = "~=4.12" },
     { name = "tox-uv", specifier = "~=1.0" },
 ]
