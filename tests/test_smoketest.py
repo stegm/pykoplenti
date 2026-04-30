@@ -126,9 +126,7 @@ class TestSmokeTests:
     ):
         """Retrieves the setting value with variant (str, None)."""
 
-        setting_value = await authenticated_client.get_setting_values(
-            "devices:local"
-        )
+        setting_value = await authenticated_client.get_setting_values("devices:local")
 
         assert (
             setting_value["devices:local"]["Branding:ProductName1"] == "PLENTICORE plus"

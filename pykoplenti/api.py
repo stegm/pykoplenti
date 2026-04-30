@@ -547,11 +547,15 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 }
             ]
 
-            async with self._session_request("processdata", method="POST", json=request) as resp:
+            async with self._session_request(
+                "processdata", method="POST", json=request
+            ) as resp:
                 await self._check_response(resp)
                 data_response = await resp.json()
                 return {
-                    x["moduleid"]: ProcessDataCollection(process_data_list(x["processdata"]))
+                    x["moduleid"]: ProcessDataCollection(
+                        process_data_list(x["processdata"])
+                    )
                     for x in data_response
                 }
 
@@ -668,7 +672,9 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 }
             ]
 
-            async with self._session_request("settings", method="POST", json=request) as resp:
+            async with self._session_request(
+                "settings", method="POST", json=request
+            ) as resp:
                 await self._check_response(resp)
                 data_response = await resp.json()
                 # expected response looks like
