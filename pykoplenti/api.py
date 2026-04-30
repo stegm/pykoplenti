@@ -539,14 +539,20 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
             and hasattr(processdata_id, "__iter__")
         ):
             # get multiple process data of a module
-            ids = ",".join(processdata_id)
-            async with self._session_request(f"processdata/{module_id}/{ids}") as resp:
+
+            request = [
+                {
+                    "moduleid": module_id,
+                    "processdataids": list(processdata_id),
+                }
+            ]
+
+            async with self._session_request("processdata", method="POST", json=request) as resp:
                 await self._check_response(resp)
                 data_response = await resp.json()
                 return {
-                    data_response[0]["moduleid"]: ProcessDataCollection(
-                        process_data_list(data_response[0]["processdata"])
-                    )
+                    x["moduleid"]: ProcessDataCollection(process_data_list(x["processdata"]))
+                    for x in data_response
                 }
 
         if isinstance(module_id, dict) and processdata_id is None:
