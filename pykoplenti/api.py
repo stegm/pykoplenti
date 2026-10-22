@@ -520,32 +520,23 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                     )
                 }
 
-        if isinstance(module_id, str) and isinstance(processdata_id, str):
-            # get a single process data of a module
-            async with self._session_request(
-                f"processdata/{module_id}/{processdata_id}"
-            ) as resp:
-                await self._check_response(resp)
-                data_response = await resp.json()
-                return {
-                    data_response[0]["moduleid"]: ProcessDataCollection(
-                        process_data_list(data_response[0]["processdata"])
-                    )
-                }
-
-        if (
-            isinstance(module_id, str)
-            and processdata_id is not None
-            and hasattr(processdata_id, "__iter__")
-        ):
+        if isinstance(module_id, str) and processdata_id is not None:
             # get multiple process data of a module
 
-            request = [
-                {
-                    "moduleid": module_id,
-                    "processdataids": list(processdata_id),
-                }
-            ]
+            if isinstance(processdata_id, str):
+                request = [
+                    {
+                        "moduleid": module_id,
+                        "processdataids": [processdata_id],
+                    }
+                ]
+            else:
+                request = [
+                    {
+                        "moduleid": module_id,
+                        "processdataids": list(processdata_id),
+                    }
+                ]
 
             async with self._session_request(
                 "processdata", method="POST", json=request
@@ -647,7 +638,6 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         if isinstance(module_id, str) and setting_id is not None:
             # get single/multiple settings of a module
 
-            request: list[dict[str, str | list[str]]]
             if isinstance(setting_id, str):
                 request = [
                     {
