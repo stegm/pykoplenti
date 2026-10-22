@@ -520,32 +520,23 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                     )
                 }
 
-        if isinstance(module_id, str) and isinstance(processdata_id, str):
-            # get a single process data of a module
-            async with self._session_request(
-                f"processdata/{module_id}/{processdata_id}"
-            ) as resp:
-                await self._check_response(resp)
-                data_response = await resp.json()
-                return {
-                    data_response[0]["moduleid"]: ProcessDataCollection(
-                        process_data_list(data_response[0]["processdata"])
-                    )
-                }
-
-        if (
-            isinstance(module_id, str)
-            and processdata_id is not None
-            and hasattr(processdata_id, "__iter__")
-        ):
+        if isinstance(module_id, str) and processdata_id is not None:
             # get multiple process data of a module
 
-            request = [
-                {
-                    "moduleid": module_id,
-                    "processdataids": list(processdata_id),
-                }
-            ]
+            if isinstance(processdata_id, str):
+                request = [
+                    {
+                        "moduleid": module_id,
+                        "processdataids": [processdata_id],
+                    }
+                ]
+            else:
+                request = [
+                    {
+                        "moduleid": module_id,
+                        "processdataids": list(processdata_id),
+                    }
+                ]
 
             async with self._session_request(
                 "processdata", method="POST", json=request
@@ -644,34 +635,28 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
                 data_response = await resp.json()
                 return {module_id: {data_response[0]["id"]: data_response[0]["value"]}}
 
-        if isinstance(module_id, str) and isinstance(setting_id, str):
-            # get a single setting of a module
-            async with self._session_request(
-                f"settings/{module_id}/{setting_id}"
-            ) as resp:
-                await self._check_response(resp)
-                data_response = await resp.json()
-                return {module_id: {data_response[0]["id"]: data_response[0]["value"]}}
+        if isinstance(module_id, str) and setting_id is not None:
+            # get single/multiple settings of a module
 
-        if (
-            isinstance(module_id, str)
-            and setting_id is not None
-            and hasattr(setting_id, "__iter__")
-        ):
-            # get multiple settings of a module
-
-            # There was once an API version which explicitly supports a single module with
-            # multiple settings in one request. However this way seems to be not supported anymore
-            # and hence we use the same approach as for multiple modules.
-            # Known to work: Plenticore plus 10
-            # Known not to work: Plenticore plus 10 G2, Plenticore M G3
-            request = [
-                {
-                    "moduleid": module_id,
-                    "settingids": list(setting_id),
-                }
-            ]
-
+            if isinstance(setting_id, str):
+                request = [
+                    {
+                        "moduleid": module_id,
+                        "settingids": [setting_id],
+                    }
+                ]
+            else:
+                # There was once an API version which explicitly supports a single module with
+                # multiple settings in one request. However this way seems to be not supported anymore
+                # and hence we use the same approach as for multiple modules.
+                # Known to work: Plenticore plus 10
+                # Known not to work: Plenticore plus 10 G2, Plenticore M G3
+                request = [
+                    {
+                        "moduleid": module_id,
+                        "settingids": list(setting_id),
+                    }
+                ]
             async with self._session_request(
                 "settings", method="POST", json=request
             ) as resp:
