@@ -5,12 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## next
+## [1.5.1] - 2026-10-22
 
 ### Fixed
 
-- `get_process_data_values` returns an API 500 error in case the overload variant `(str, Iterable[str])`
-  was used on newer models (like Plenticore plus G2).
+- `get_settings_values` and `get_process_data_values` returns an API 500 error in case the overload 
+  variant `(str, str)` was used on newer firmware.
 
 ## [1.5.0] - 2026-01-07
 
