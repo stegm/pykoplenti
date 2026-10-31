@@ -7,7 +7,7 @@ name = "pykoplenti"
 version = "1.5.1"
 description = "Python REST-Client for Kostal Plenticore Solar Inverters"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = "Apache-2.0"
 keywords = ["rest", "kostal", "plenticore", "solar"]
 authors = [
@@ -19,11 +19,10 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
@@ -48,18 +47,18 @@ issues = "https://github.com/stegm/pykoplenti/issues"
 
 [dependency-groups]
 dev = [
-    "black~=23.10",
-    "isort~=5.12",
-    "click>=8.0",
-    "ruff~=0.14.0",
-    "pytest~=7.4",
-    "pytest-asyncio~=0.21",
-    "pytest-cov~=4.1",
+    "black~=26.10",
+    "isort~=9.0",
+    "click~=8.5",
+    "ruff~=0.17.3",
+    "pytest~=9.2",
+    "pytest-asyncio~=1.4.1",
+    "pytest-cov~=7.1",
     "prompt_toolkit>=3.0",
-    "mypy~=1.6",
-    "build~=1.0",
-    "tox~=4.12",
-    "tox-uv~=1.0",
+    "mypy~=2.4",
+    "build~=1.6",
+    "tox~=4.67",
+    "tox-uv~=1.37",
 ]
 
 [tool.hatchling.build.targets.wheel]
@@ -85,3 +84,6 @@ line-length = 88
 
 [tool.mypy]
 files = ["pykoplenti", "tests"]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
