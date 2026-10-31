@@ -11,7 +11,7 @@ from os import urandom
 from typing import IO, Dict, Final, Iterable, List, Union, overload
 import warnings
 
-from Crypto.Cipher import AES
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
 from yarl import URL
 
@@ -310,12 +310,14 @@ class ApiClient(contextlib.AbstractAsyncContextManager):
         session_key_hmac.update(client_key)
         protocol_key = session_key_hmac.digest()
         session_nonce = urandom(16)
-        cipher = AES.new(protocol_key, AES.MODE_GCM, nonce=session_nonce)
 
         if self._user == "master":
             token = f"{token}:{self._service_code}"
 
-        cipher_text, auth_tag = cipher.encrypt_and_digest(token.encode("utf-8"))
+        sealed = AESGCM(protocol_key).encrypt(
+            session_nonce, token.encode("utf-8"), None
+        )
+        cipher_text, auth_tag = sealed[:-16], sealed[-16:]
 
         session_request = {
             # AES initialization vector
