@@ -33,6 +33,16 @@ class _VirtProcessDataItemBase(ABC):
                 if len(matching_process_ids) > 0:
                     self.available_process_data[module_id] = matching_process_ids
 
+    def has_all_values(
+        self, process_values: Mapping[str, ProcessDataCollection]
+    ) -> bool:
+        """Return whether all process data required by this item were returned."""
+        return all(
+            module_id in process_values
+            and process_ids.issubset(process_values[module_id])
+            for module_id, process_ids in self.available_process_data.items()
+        )
+
     @abstractmethod
     def get_value(
         self, process_values: Mapping[str, ProcessDataCollection]
@@ -166,7 +176,9 @@ class _VirtProcessDataManager:
         for id in request_data[_VIRT_MODUL_ID]:
             for vpd in self._virt_process_data:
                 if vpd.processid == id:
-                    virtual_process_data_values.append(vpd.get_value(values))
+                    if vpd.has_all_values(values):
+                        virtual_process_data_values.append(vpd.get_value(values))
+                    break
         result["_virt_"] = ProcessDataCollection(virtual_process_data_values)
 
         # add all values which was requested but not the extra ids for the virtual ids

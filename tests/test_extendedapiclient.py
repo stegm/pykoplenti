@@ -137,6 +137,100 @@ class TestVirtualProcessDataValuesDcSum:
             )
         }
 
+    @pytest.mark.parametrize("missing_module", [False, True])
+    @pytest.mark.asyncio
+    async def test_virtual_process_data_value_missing_dependency_recovers(
+        self,
+        pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
+        client_response_factory: Callable[
+            [int, Union[list[Any], dict[Any, Any]]], MagicMock
+        ],
+        missing_module: bool,
+    ):
+        """Skip an incomplete virtual sum while preserving regular data."""
+        client_response_factory(
+            200,
+            [
+                {"moduleid": "devices:local:pv1", "processdataids": ["P"]},
+                {"moduleid": "devices:local:pv2", "processdataids": ["P"]},
+                {"moduleid": "devices:local", "processdataids": ["EM_State"]},
+            ],
+        )
+
+        incomplete_response = [
+            {
+                "moduleid": "devices:local:pv2",
+                "processdata": [{"id": "P", "unit": "W", "value": 300.0}],
+            },
+            {
+                "moduleid": "devices:local",
+                "processdata": [
+                    {"id": "EM_State", "unit": "", "value": 1.0},
+                ],
+            },
+        ]
+        if not missing_module:
+            incomplete_response.insert(
+                0, {"moduleid": "devices:local:pv1", "processdata": []}
+            )
+        client_response_factory(200, incomplete_response)
+        client_response_factory(
+            200,
+            [
+                {
+                    "moduleid": "devices:local:pv1",
+                    "processdata": [{"id": "P", "unit": "W", "value": 700.0}],
+                },
+                {
+                    "moduleid": "devices:local:pv2",
+                    "processdata": [{"id": "P", "unit": "W", "value": 300.0}],
+                },
+                {
+                    "moduleid": "devices:local",
+                    "processdata": [
+                        {"id": "EM_State", "unit": "", "value": 1.0},
+                    ],
+                },
+            ],
+        )
+
+        request = {
+            "_virt_": ["pv_P"],
+            "devices:local": ["EM_State"],
+            "devices:local:pv1": ["P"],
+            "devices:local:pv2": ["P"],
+        }
+        incomplete_values = await pykoplenti_extended_client.get_process_data_values(
+            request
+        )
+        recovered_values = await pykoplenti_extended_client.get_process_data_values(
+            request
+        )
+
+        assert incomplete_values == {
+            "_virt_": pykoplenti.ProcessDataCollection([]),
+            "devices:local": pykoplenti.ProcessDataCollection(
+                [pykoplenti.ProcessData(id="EM_State", unit="", value=1.0)]
+            ),
+            "devices:local:pv2": pykoplenti.ProcessDataCollection(
+                [pykoplenti.ProcessData(id="P", unit="W", value=300.0)]
+            ),
+        }
+        assert recovered_values == {
+            "_virt_": pykoplenti.ProcessDataCollection(
+                [pykoplenti.ProcessData(id="pv_P", unit="W", value=1000.0)]
+            ),
+            "devices:local": pykoplenti.ProcessDataCollection(
+                [pykoplenti.ProcessData(id="EM_State", unit="", value=1.0)]
+            ),
+            "devices:local:pv1": pykoplenti.ProcessDataCollection(
+                [pykoplenti.ProcessData(id="P", unit="W", value=700.0)]
+            ),
+            "devices:local:pv2": pykoplenti.ProcessDataCollection(
+                [pykoplenti.ProcessData(id="P", unit="W", value=300.0)]
+            ),
+        }
+
 
 class TestVirtualProcessDataValuesEnergyToGrid:
     """This class contains tests for virtual process data values for energy to grid."""
@@ -271,6 +365,69 @@ class TestVirtualProcessDataValuesEnergyToGrid:
                     )
                 ]
             )
+        }
+
+    @pytest.mark.asyncio
+    async def test_virtual_process_data_value_missing_dependency(
+        self,
+        pykoplenti_extended_client: pykoplenti.ExtendedApiClient,
+        client_response_factory: Callable[
+            [int, Union[list[Any], dict[Any, Any]]], MagicMock
+        ],
+    ):
+        """Skip an incomplete virtual energy value but preserve regular data."""
+        client_response_factory(
+            200,
+            [
+                {
+                    "moduleid": "scb:statistic:EnergyFlow",
+                    "processdataids": [
+                        "Statistic:Yield:Total",
+                        "Statistic:EnergyHomeBat:Total",
+                        "Statistic:EnergyHomePv:Total",
+                        "Statistic:Autarky:Day",
+                    ],
+                },
+            ],
+        )
+        client_response_factory(
+            200,
+            [
+                {
+                    "moduleid": "scb:statistic:EnergyFlow",
+                    "processdata": [
+                        {"id": "Statistic:Yield:Total", "unit": "Wh", "value": 1000.0},
+                        {
+                            "id": "Statistic:EnergyHomeBat:Total",
+                            "unit": "Wh",
+                            "value": 100.0,
+                        },
+                        {
+                            "id": "Statistic:Autarky:Day",
+                            "unit": "%",
+                            "value": 80.0,
+                        },
+                    ],
+                },
+            ],
+        )
+
+        values = await pykoplenti_extended_client.get_process_data_values(
+            {
+                "_virt_": ["Statistic:EnergyGrid:Total"],
+                "scb:statistic:EnergyFlow": ["Statistic:Autarky:Day"],
+            }
+        )
+
+        assert values == {
+            "_virt_": pykoplenti.ProcessDataCollection([]),
+            "scb:statistic:EnergyFlow": pykoplenti.ProcessDataCollection(
+                [
+                    pykoplenti.ProcessData(
+                        id="Statistic:Autarky:Day", unit="%", value=80.0
+                    )
+                ]
+            ),
         }
 
 
